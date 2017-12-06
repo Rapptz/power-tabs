@@ -1,0 +1,30 @@
+<!-- With help from https://github.com/asamuzaK -->
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16">
+  <defs>
+    <style>
+      @keyframes throbber {
+        0% {
+          transform: translateX(-6px) scale(1, 1);
+        }
+        17.5% {
+          transform: translateX(-4.55px) scale(1.6, 0.9);
+        }
+        50% {
+          transform: translateX(6px) scale(1,1);
+        }
+        67.5% {
+          transform: translateX(0) scale(1.6, 0.9);
+        }
+        100% {
+          transform: translateX(-6px) scale(1, 1);
+        }
+      }
+      circle {
+        transform-origin: 50% 50%;
+        animation: throbber 1.05s ease infinite;
+        fill: rgb(10, 132, 255);
+      }
+    </style>
+  </defs>
+  <circle cx="50%" cy="50%" r="2"/>
+</svg>

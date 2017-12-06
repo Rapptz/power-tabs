@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <link rel="stylesheet" href="main.css"/>
+</head>
+<body>
+  <div id="controls">
+    <div id="search-container">
+      <div id="search-icon"></div>
+      <input type="search" id="search" placeholder="Search tabs" autofocus>
+      <div id="cancel-search-icon" class="hidden"></div>
+    </div>
+    <button type="button" class="control-button" id="new-group-button" title="New Group"></button>
+  </div>
+  <div id="container">
+    <!-- empty -->
+  </div>
+  <script src="../utils/escape.js"></script>
+  <script src="../utils/fuzzy.js"></script>
+  <script src="../utils/uuid4.js"></script>
+  <script src="tab.js"></script>
+  <script src="contextmenu.js"></script>
+  <script src="group.js"></script>
+  <script src="main.js"></script>
+</body>
+</html>

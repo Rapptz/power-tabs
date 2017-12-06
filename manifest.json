@@ -1,0 +1,34 @@
+{
+    "manifest_version": 2,
+    "name": "Power Tabs",
+    "version": "1.0",
+    "description": "Search through tabs",
+    "applications": {
+        "gecko": {
+            "id": "testing_my_fucking_addon@holyfuckmozilla.com",
+            "strict_min_version": "57.0"
+        }
+    },
+
+    "permissions": [
+        "activeTab",
+        "tabs",
+        "storage",
+        "sessions"
+    ],
+
+    "commands": {
+        "_execute_sidebar_action": {
+            "suggested_key": {
+                "default": "Ctrl+Period"
+            },
+            "description": "Opens the Quick Tab Switcher."
+        }
+    },
+
+    "sidebar_action": {
+        "default_title": "Power Tabs",
+        "default_panel": "sidebar/main.html",
+        "browser_style": true
+    }
+}
