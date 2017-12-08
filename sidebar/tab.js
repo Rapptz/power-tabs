@@ -188,8 +188,14 @@ class TabEntry {
     items.push({name: "separator"});
     items.push({
       name: "Undo Close Tab",
-      isEnabled: () => false,
-      onClick: (e) => {}
+      onClick: async (e) => {
+        let last = await browser.sessions.getRecentlyClosed({maxResults: 1});
+        if(last.length === 0) {
+          return;
+        }
+        let obj = last[0].tab || last[0].window;
+        await browser.sessions.restore(obj.sessionId);
+      }
     });
 
     items.push({
