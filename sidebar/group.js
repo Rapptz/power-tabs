@@ -658,7 +658,6 @@ class Group {
     /**
      * Add Tab
      * ---
-     * Bookmark All Tabs
      * Reload All Tabs
      * Sort Tabs By
      * ---
@@ -674,11 +673,6 @@ class Group {
         onClick: (e) => this.parent.createTab({group: this})
       },
       { name: "separator" },
-      {
-        name: "Bookmark All Tabs",
-        isEnabled: () => false,
-        onClick: () => {}
-      },
       {
         name: "Reload All Tabs",
         isEnabled: () => false,
@@ -724,7 +718,6 @@ class Group {
      * Move Tabs To
      * ---
      * Reload Tabs
-     * Bookmark Tabs
      * Close Other Tabs
      * ---
      * Close Tabs
@@ -753,11 +746,6 @@ class Group {
         name: "Reload Tabs",
         isEnabled: () => false,
         onClick: (e) => this.applyToSelected((t) => t.reload())
-      },
-      {
-        name: "Bookmark Tabs",
-        isEnabled: () => false,
-        onClick: (e) => this.applyToSelected((t) => t.bookmark())
       },
       {
         name: "Close Other Tabs",
