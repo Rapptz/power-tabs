@@ -277,6 +277,11 @@ class TabEntry {
     return this.title.search(new RegExp(escapeRegex(substring), "i")) !== -1;
   }
 
+  shouldHide(query) {
+    let regex = new RegExp(escapeRegex(query), "i");
+    return this.title.search(regex) !== -1 || this.url.search(regex) !== -1;
+  }
+
   changeTab() {
     browser.tabs.update(this.id, { active: true });
   }

@@ -175,6 +175,34 @@ class Group {
     return toReturn;
   }
 
+  popVisiblySelected() {
+    // same as popSelected except it only gives you the visible tabs
+    // this matters for e.g. filtered views using the search bar.
+
+    // transform to a lookup of tab ID for selected tabs
+    let toRetrieve = new Set(this._selected.map((t) => t.id));
+
+    // remove all visible selected tabs
+    let visibleSelected = [];
+    this._selected = this._selected.filter((t) => {
+      if(t.visible) {
+        visibleSelected.push(t);
+        t.view.classList.remove("selected-tab");
+        return false;
+      }
+      return true;
+    });
+
+    this.tabs = this.tabs.filter((t) => {
+      if(t.visible && toRetrieve.has(t.id)) {
+        this._listView.removeChild(t.view);
+        return false;
+      }
+      return true;
+    });
+    return visibleSelected;
+  }
+
   addSelected(tab) {
     this._selected.push(tab);
     tab.view.classList.add("selected-tab");
@@ -210,7 +238,6 @@ class Group {
 
   _selectRange(begin, end) {
     // range is closed [begin, end]
-
     let trueEnd = Math.min(end + 1, this.tabs.length);
     let selectedTabs = new Set(this._selected.map((t) => t.id));
     for(; begin != trueEnd; ++begin) {
@@ -220,6 +247,41 @@ class Group {
         selectedTabs.add(tab.id);
       }
     }
+  }
+
+  async moveSelectedToNewWindow() {
+    let tabs = this.popVisiblySelected();
+    let firstTab = tabs.shift();
+    let windowId = null;
+
+    if(firstTab) {
+      let windowInfo = await browser.windows.create({ tabId: firstTab.id });
+      windowId = windowInfo.id;
+    }
+    else {
+      let windowInfo = await browser.windows.create();
+      windowId = windowInfo.id;
+    }
+    await browser.tabs.move(tabs.map((t) => t.id), { windowId: windowId, index: -1})
+  }
+
+  moveSelectedToGroup(group) {
+    let tabs = this.popVisiblySelected();
+    group.appendTabs(tabs);
+    group.sortByPosition();
+  }
+
+  closeOutsideOfSelected() {
+    let selectedTabs = new Set(this._selected.filter((t) => t.visible).map((t) => t.id));
+    for(let tab of this.tabs.concat()) {
+      if(!selectedTabs.has(tab.id)) {
+        tab.close();
+      }
+    }
+  }
+
+  applyToSelected(func) {
+    this._selected.filter((t) => t.visible).forEach(func);
   }
 
   onClick(e) {
@@ -652,6 +714,59 @@ class Group {
             groupList.removeGroup(this);
           }
         }
+      }
+    ];
+    return items;
+  }
+
+  getSelectedContextMenuItems(groupList) {
+    /**
+     * Move Tabs To
+     * ---
+     * Reload Tabs
+     * Bookmark Tabs
+     * Close Other Tabs
+     * ---
+     * Close Tabs
+     */
+
+    let items = [
+      {
+        name: "Move Tabs To",
+        items: [
+          {
+            name: "New Window",
+            onClick: (e) => this.moveSelectedToNewWindow()
+          },
+          { name: "separator" }
+        ].concat(groupList.groups.map((x) => {
+            let group = x;
+            return {
+              name: group.name,
+              isEnabled: () => group.uuid !== this.uuid,
+              onClick: (e) => this.moveSelectedToGroup(group)
+            };
+        }))
+      },
+      { name: "separator" },
+      {
+        name: "Reload Tabs",
+        isEnabled: () => false,
+        onClick: (e) => this.applyToSelected((t) => t.reload())
+      },
+      {
+        name: "Bookmark Tabs",
+        isEnabled: () => false,
+        onClick: (e) => this.applyToSelected((t) => t.bookmark())
+      },
+      {
+        name: "Close Other Tabs",
+        onClick: (e) => this.closeOutsideOfSelected()
+      },
+      { name: "separator" },
+      {
+        name: "Close Tabs",
+        onClick: (e) => this.applyToSelected((t) => t.close())
       }
     ];
     return items;

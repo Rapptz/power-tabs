@@ -228,9 +228,9 @@ class GroupList {
     return this.groups.length;
   }
 
-  filterFromText(substring) {
+  filterFromText(query) {
     for(let tab of this._tabCache.values()) {
-      let match = tab.matchesTitle(substring);
+      let match = tab.shouldHide(query);
       tab.toggleVisibility(match);
     }
   }
@@ -287,7 +287,14 @@ class GroupList {
       if(!tab) {
         return;
       }
-      items = tab.getContextMenuItems(this);
+
+      let group = tab.group;
+      if(group.isSelected(tab) && group.selectedCount >= 2) {
+        items = group.getSelectedContextMenuItems(this);
+      }
+      else {
+        items = tab.getContextMenuItems(this);
+      }
     }
     else {
       let groupId = Group.groupIdFromEvent(e);
@@ -393,7 +400,7 @@ class GroupList {
     this._tabCache.set(tabInfo.id, entry);
 
     if(this._searchBar.value) {
-      entry.toggleVisibility(entry.matchesTitle(this._searchBar.value));
+      entry.toggleVisibility(entry.shouldHide(this._searchBar.value));
     }
 
     let activeGroup = this.activeGroup;
@@ -462,7 +469,7 @@ class GroupList {
     if(tab) {
       tab.update(changeInfo);
       if(this._searchBar.value) {
-        tab.toggleVisibility(tab.matchesTitle(this._searchBar.value));
+        tab.toggleVisibility(tab.shouldHide(this._searchBar.value));
       }
     }
   }
