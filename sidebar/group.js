@@ -18,6 +18,8 @@ class Group {
     this.parent = null;
     this.tabs = [];
     this.buildView();
+    this._selected = [];
+    this._previousDrop = null;
   }
 
   buildView() {
@@ -33,16 +35,33 @@ class Group {
       this.parent.saveStorage();
     });
 
-    // enable drag and drop of groups
-    details.addEventListener("dragstart", (e) => {
-      e.dataTransfer.dropEffect = "move";
-      let dragData = {
-        target_id: e.target.id,
-        id: this.uuid
-      };
-      e.dataTransfer.setData("tab-data-type", "group");
-      e.dataTransfer.setData("tab-data", JSON.stringify(dragData));
+    details.addEventListener("dragenter", (e) => {
+      // e.preventDefault();
+      if(e.target !== this._listView && e.target.classList) {
+        e.target.classList.add("drop-target");
+
+        // can't use dragleave because it's buggy
+        if(this._previousDrop) {
+          this._previousDrop.classList.remove("drop-target");
+        }
+        this._previousDrop = e.target;
+      }
     });
+
+    details.addEventListener("drop", (e) => {
+      if(this._previousDrop) {
+        this._previousDrop.classList.remove("drop-target");
+      }
+    })
+
+    details.addEventListener("dragleave", (e) => {
+      // e.preventDefault();
+      if(e.target === this.view) {
+        this.view.classList.remove("drop-target");
+      }
+    });
+
+    details.addEventListener("click", (e) => this.onClick(e));
 
     let summary = document.createElement("summary");
     summary.className = "tab-group-container";
@@ -110,42 +129,165 @@ class Group {
     let list = document.createElement("div");
     list.className = "tab-group-list";
     this._listView = list;
-
-    details.addEventListener("dragover", (e) => {
-      let data = e.dataTransfer.getData("tab-data-type");
-      if(!data || data !== "tab") {
-        return;
-      }
-
-      this.view.classList.add("group-drag-target");
-      e.preventDefault();
-    });
-
-    details.addEventListener("dragleave", (e) => {
-      this.view.classList.remove("group-drag-target");
-    });
-
-    details.addEventListener("drop", (e) => {
-      let data = JSON.parse(e.dataTransfer.getData("tab-data"));
-      if(!data) {
-        return;
-      }
-
-      let tab = this.parent.getTab(parseInt(data.id));
-      if(!tab) {
-        return;
-      }
-
-      if(tab.group !== this) {
-        tab.detach();
-        this.addTab(tab);
-      }
-      this.view.classList.remove("group-drag-target");
-      e.preventDefault();
-    });
-
     details.appendChild(summary);
     details.appendChild(list);
+  }
+
+  getRightBefore(tabIndex) {
+    let i = 0;
+    for(; i < this.tabs.length; ++i) {
+      if(this.tabs[i].index >= tabIndex) {
+        break;
+      }
+    }
+    i = Math.max(i - 1, 0);
+    return this.tabs[i] || null;
+  }
+
+  _sortSelected() {
+    this._selected.sort((a, b) => a.index - b.index);
+  }
+
+  get selectedCount() {
+    return this._selected.length;
+  }
+
+  styleSelectedDragStart(value) {
+    for(let e of this._selected) {
+      e.view.classList.toggle("drag-target", value);
+    }
+  }
+
+  popSelected() {
+    // transform to a lookup of tab ID for selected tabs
+    let toRetrieve = new Set(this._selected.map((t) => t.id));
+    this.cleanSelected();
+
+    let toReturn = [];
+    this.tabs = this.tabs.filter((t) => {
+      if(toRetrieve.has(t.id)) {
+        toReturn.push(t);
+        this._listView.removeChild(t.view);
+        return false;
+      }
+      return true;
+    });
+    return toReturn;
+  }
+
+  addSelected(tab) {
+    this._selected.push(tab);
+    tab.view.classList.add("selected-tab");
+  }
+
+  removeSelected(tab) {
+    let index = this._selected.indexOf(tab);
+    if(index !== -1) {
+      tab.view.classList.remove("selected-tab");
+      this._selected.splice(index, 1);
+    }
+  }
+
+  isSelected(tab) {
+    return tab.active || this._selected.includes(tab);
+  }
+
+  clearSelected() {
+    for(let tab of this._selected) {
+      tab.view.classList.remove("selected-tab");
+    }
+    this._selected = [];
+  }
+
+  cleanSelected() {
+    // same as clear except it keeps the active tab as selected if exists
+    this.clearSelected();
+    let entry = this.tabs.find((t) => t.active);
+    if(entry) {
+      this.addSelected(entry);
+    }
+  }
+
+  _selectRange(begin, end) {
+    // range is closed [begin, end]
+
+    let trueEnd = Math.min(end + 1, this.tabs.length);
+    let selectedTabs = new Set(this._selected.map((t) => t.id));
+    for(; begin != trueEnd; ++begin) {
+      let tab = this.tabs[begin];
+      if(!selectedTabs.has(tab.id)) {
+        this.addSelected(tab);
+        selectedTabs.add(tab.id);
+      }
+    }
+  }
+
+  onClick(e) {
+    let tabId = TabEntry.tabIdFromEvent(e);
+    if(!tabId) {
+      return;
+    }
+
+    if(this !== this.parent.activeGroup) {
+      return;
+    }
+
+    let ctrlKey = e.ctrlKey || e.metaKey; // for MacOS
+
+    let tabIndex = this.tabs.findIndex((t) => t.id == tabId);
+    let tab = this.tabs[tabIndex];
+
+    if(!tab || tab.aboutToClose) {
+      return;
+    }
+
+    if(ctrlKey && e.shiftKey) {
+      if(!this._selected.length) {
+        return; // ctrl + shift + click only works if we have something selected
+      }
+
+      let anchor = this.tabs.indexOf(this._selected[0]);
+      if(tabIndex > anchor) {
+        this._selectRange(anchor, tabIndex);
+      }
+      else {
+        this._selectRange(tabIndex, anchor);
+      }
+    }
+    else if(ctrlKey) {
+      if(this.isSelected(tab)) {
+        this.removeSelected(tab);
+      }
+      else {
+        this.addSelected(tab);
+      }
+    }
+    else if(e.shiftKey) {
+      let anchor = 0;
+      if(this._selected.length == 0) {
+        anchor = Math.max(this.tabs.findIndex((t) => t.active), 0);
+      }
+      else {
+        anchor = this.tabs.indexOf(this._selected[0]);
+      }
+
+      this.clearSelected();
+      if(tabIndex > anchor) {
+        this._selectRange(anchor, tabIndex);
+      }
+      else if(tabIndex < anchor) {
+        this._selectRange(tabIndex, anchor);
+      }
+      else {
+        this.addSelected(tab);
+      }
+    }
+    else {
+      this.clearSelected();
+      this.addSelected(tab);
+    }
+
+    this._sortSelected();
   }
 
   addTab(tabEntry, relativeTo) {
@@ -175,6 +317,64 @@ class Group {
     tabEntry.group = this;
     this.tabs.push(tabEntry);
     this._listView.appendChild(tabEntry.view);
+  }
+
+  async appendTabs(tabEntries, relativeTo) {
+    if(!relativeTo) {
+      for(let entry of tabEntries) {
+        this.loadTab(entry);
+        await browser.sessions.setTabValue(entry.id, "group-id", this.uuid);
+      }
+      return;
+    }
+
+    // get canonical sort order
+    let relativeIndex = this.tabs.indexOf(relativeTo);
+    let node = relativeTo.view.nextSibling;
+
+    this.parent.beginBatchMove();
+
+    for(let i = 0; i < tabEntries.length; ++i) {
+      let entry = tabEntries[i];
+      entry.group = this;
+      this.tabs.splice(relativeIndex + i + 1, 0, entry);
+
+      if(entry.active) {
+        this.addSelected(entry);
+      }
+
+      this._listView.insertBefore(entry.view, node);
+      node = entry.view.nextSibling;
+
+      await browser.sessions.setTabValue(entry.id, "group-id", this.uuid);
+    }
+
+    // bulk move and update tabs to sort by our current position
+    await browser.tabs.move(this.tabs.map((t) => t.id), {index: this.tabs[0].index});
+    this.parent.endBatchMove();
+    await this.parent.resync();
+  }
+
+  _getCanonicalOrder(tabEntries, relativeTo) {
+    let canonicalOrder = new Map();
+    let rollingCount = 0;
+    let relativeIndex = this.tabs.indexOf(relativeTo);
+
+    // pre-condition, relativeIndex !=== -1
+
+    for(let i = 0; i <= relativeIndex; ++i) {
+      canonicalOrder.set(this.tabs[i].id, rollingCount++);
+    }
+
+    for(var i = 0; i < tabEntries.length; ++i) {
+      canonicalOrder.set(tabEntries[i].id, rollingCount++);
+    }
+
+    for(let i = relativeIndex + 1; i < this.tabs.length; ++i) {
+      canonicalOrder.set(this.tabs[i].id, rollingCount++);
+    }
+
+    return canonicalOrder;
   }
 
   showRenameGroup() {
@@ -247,8 +447,15 @@ class Group {
     this._listView.insertBefore(tab.view, relativeNode);
   }
 
-  toggleActive(value) {
+  toggleActive(tab, value) {
     this.active = value;
+    tab.view.classList.toggle("active-tab", value);
+    if(value) {
+      this.addSelected(tab);
+    }
+    else {
+      this.removeSelected(tab);
+    }
   }
 
   tabIndex(tabId) {

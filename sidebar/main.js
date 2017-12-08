@@ -7,6 +7,7 @@ class GroupList {
     this.windowId = null;
     this._contextMenu = null;
     this._signalBatchMove = false;
+    this._resetDragContext();
 
     this._searchBar = document.getElementById("search");
     this._cancelButton = document.getElementById("cancel-search-icon");
@@ -45,30 +46,34 @@ class GroupList {
     browser.tabs.onUpdated.addListener((tabId, changeInfo, info) => this.onUpdated(tabId, changeInfo, info));
     browser.tabs.onMoved.addListener((tabId, moveInfo) => this.onMoved(tabId, moveInfo));
 
-    this._container.addEventListener("dragover", (e) => {
-      let data = e.dataTransfer.getData("tab-data-type");
-      if(!data || data !== "group") {
-        return;
-      }
-
-      this._container.classList.add("group-drag-target");
-      e.preventDefault();
-    });
-
-    this._container.addEventListener("dragleave", (e) => {
-      this._container.classList.remove("group-drag-target");
-    });
-
+    this._container.addEventListener("dragover", (e) => this.onDragOver(e));
+    this._container.addEventListener("dragstart", (e) => this.onDragStart(e));
+    this._container.addEventListener("dragend", (e) => this.onDragEnd(e));
     this._container.addEventListener("drop", (e) => this.onDrop(e));
     this._container.addEventListener("contextmenu", (e) => this.onContextMenu(e));
 
-    window.addEventListener("click", (e) => this.hideContextMenu());
-    window.addEventListener("blur", (e) => this.hideContextMenu());
+    window.addEventListener("click", (e) => {
+      this.hideContextMenu();
+      this.maybeCleanSelection(e);
+    });
+    window.addEventListener("blur", (e) => {
+      this.hideContextMenu();
+      this.maybeCleanSelection(e);
+    });
     window.addEventListener("keyup", (e) => {
       if(e.key === "Escape") {
         this.hideContextMenu();
+        this.maybeCleanSelection(e);
       }
     });
+  }
+
+  _resetDragContext() {
+    this._dragContext = {
+      group: null,
+      isSoloTab: false,
+      tab: null
+    };
   }
 
   async populate() {
@@ -158,6 +163,22 @@ class GroupList {
     }
   }
 
+  cleanSelectedExcept(group) {
+    for(let g of this.groups) {
+      if(g !== group) {
+        g.cleanSelected();
+      }
+    }
+  }
+
+  maybeCleanSelection(e) {
+    // clean the selection if we're clicking outside of a group boundary
+    let group = e.target === window ? null : Group.groupIdFromEvent(e);
+    if(group === null) {
+      this.groups.forEach((g) => g.cleanSelected());
+    }
+  }
+
   addGroup(group) {
     group.parent = this;
     this.groups.push(group);
@@ -224,8 +245,8 @@ class GroupList {
         let oldEntry = this.getTab(tabInfo.id);
         if(oldEntry.group !== group) {
           oldEntry.detach();
+          group.addTab(oldEntry);
         }
-        group.addTab(oldEntry);
       }, 0);
     });
   }
@@ -340,6 +361,9 @@ class GroupList {
 
     if(tab) {
       tab.toggleActive(true);
+      if(tab.group !== this._activeTab.group) {
+        this.cleanSelectedExcept(tab.group);
+      }
       this._activeTab = tab;
     }
   }
@@ -372,11 +396,17 @@ class GroupList {
       entry.toggleVisibility(entry.matchesTitle(this._searchBar.value));
     }
 
-    let openerTab = tabInfo.hasOwnProperty("openerTabId") ? this.getTab(tabInfo.openerTabId) : null;
-    let group = this.activeGroup;
-    if(group) {
-      group.addTab(entry, openerTab);
-    }
+    browser.sessions.getTabValue(entry.id, "group-id").then((groupId) => {
+      let group = groupId ? this.getGroup(groupId) : this.activeGroup;
+      if(group) {
+        let relativeTab = tabInfo.hasOwnProperty("openerTabId") ?
+                          this.getTab(tabInfo.openerTabId) : group.getRightBefore(entry.index);
+        group.addTab(entry, relativeTab);
+        if(entry.active) {
+          this.setActive(entry);
+        }
+      }
+    });
   }
 
   _removeTab(tabId) {
@@ -387,7 +417,6 @@ class GroupList {
     this._tabCache.delete(tabId);
 
     // update positions
-    console.log("Okay...");
     for(var entry of this._tabCache.values()) {
       if(entry.index >= tab.index) {
         entry.index -= 1;
@@ -437,42 +466,114 @@ class GroupList {
     }
   }
 
-  onDrop(e) {
-    let data = JSON.parse(e.dataTransfer.getData("tab-data"));
-    if(!data) {
+  /* drag and drop events */
+
+  onDragOver(e) {
+    // only groups and tabs are draggable
+    if(TabEntry.tabIdFromEvent(e) || Group.groupIdFromEvent(e)) {
+      e.preventDefault();
+    }
+  }
+
+  onDragStart(e) {
+    e.dataTransfer.dropEffect = "move";
+    e.dataTransfer.setData("text/plain", "...");
+
+    let tabId = TabEntry.tabIdFromEvent(e);
+    if(tabId) {
+      let tab = this._dragContext.tab = this.getTab(tabId);
+      if(tab) {
+        this._dragContext.group = tab.group;
+        let isSolo = this._dragContext.isSoloTab = tab.group.selectedCount <= 1;
+        if(isSolo) {
+          tab.view.classList.add("drag-target");
+        }
+        else {
+          this._dragContext.group.styleSelectedDragStart(true);
+        }
+      }
+    }
+    else {
+      let groupId = Group.groupIdFromEvent(e);
+      let g = this._dragContext.group = this.getGroup(groupId);
+      g.view.classList.add("drag-target");
+    }
+  }
+
+  onDragEnd(e) {
+    if(this._dragContext.tab !== null) {
+      if(this._dragContext.isSoloTab) {
+        this._dragContext.tab.view.classList.remove("drag-target");
+      }
+      else {
+        this._dragContext.group.styleSelectedDragStart(false);
+      }
+    }
+    else {
+      this._dragContext.group.view.classList.remove("drag-target");
+    }
+    this._resetDragContext();
+  }
+
+  async _dropTabs(e, groupIndex) {
+    e.preventDefault();
+
+    let relativeTab = this.getTab(TabEntry.tabIdFromEvent(e));
+    let group = this.groups[groupIndex];
+
+    if(this._dragContext.isSoloTab) {
+      if(relativeTab === this._dragContext.tab) {
+        return;
+      }
+
+      this._dragContext.group.removeTab(this._dragContext.tab);
+      await group.appendTabs([this._dragContext.tab], relativeTab);
+    }
+    else {
+      this._dragContext.group.styleSelectedDragStart(false);
+      let tabs = this._dragContext.group.popSelected();
+      await group.appendTabs(tabs, relativeTab);
+    }
+  }
+
+  async onDrop(e) {
+    console.log("Drop", e, this._dragContext);
+    let groupId = Group.groupIdFromEvent(e);
+    if(!groupId) {
       return;
     }
 
-    let groupIndex = this.groups.findIndex((g) => g.uuid == data.id);
+    let groupIndex = this.groups.findIndex((g) => g.uuid == groupId);
     if(groupIndex === -1) {
       return;
     }
 
-    let group = this.groups[groupIndex];
-
-    // get the closest detail tag
-    let el = e.target.closest("[data-group-id]");
-    let beforeGroupId = el.getAttribute("data-group-id");
-    if(beforeGroupId === data.id) {
-      return;
-    }
-
-    let targetIndex = this.groups.findIndex((g) => g.uuid == beforeGroupId);
-
-    // remove the group from the array and reinsert it at an appropriate position
-    this.groups.splice(targetIndex, 0, this.groups.splice(groupIndex, 1)[0]);
-
-    // modify the DOM to point to the new structure
-    if(groupIndex > targetIndex) {
-      this._container.insertBefore(group.view, el);
+    if(this._dragContext.tab !== null) {
+      // we're drag and dropping tabs into a group
+      await this._dropTabs(e, groupIndex);
     }
     else {
-      this._container.insertBefore(group.view, el.nextSibling);
-    }
+      // we're drag and dropping a group
+      let group = this.groups[groupIndex];
+      if(group === this._dragContext.group) {
+        return;
+      }
 
-    this._container.classList.remove("group-drag-target");
-    e.preventDefault();
-    this.saveStorage();
+      let originalIndex = this.groups.indexOf(this._dragContext.group);
+
+      // remove the group and reinsert it at the appropriate position
+      this.groups.splice(groupIndex, 0, this.groups.splice(originalIndex, 1)[0]);
+
+      // modify the DOM to point to the new structure
+      if(originalIndex > groupIndex) {
+        this._container.insertBefore(this._dragContext.group.view, group.view);
+      }
+      else {
+        this._container.insertBefore(this._dragContext.group.view, group.view.nextSibling);
+      }
+      e.preventDefault();
+      this.saveStorage();
+    }
   }
 }
 

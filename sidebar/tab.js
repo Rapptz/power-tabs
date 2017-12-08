@@ -13,6 +13,7 @@ class TabEntry {
     this.discarded = tabInfo.discarded;
     this.visible = true; /* maybe */
     this.group = null;
+    this.aboutToClose = false;
     this.buildView();
   }
 
@@ -25,23 +26,23 @@ class TabEntry {
       tab.classList.add("discarded-tab");
     }
 
-    tab.addEventListener("click", () => this.changeTab());
-    tab.addEventListener("dragstart", (e) => {
-      e.stopPropagation();
-      e.dataTransfer.dropEffect = "move";
-      let dragData = {
-        target_id: e.target.id,
-        id: this.id
-      };
-      e.dataTransfer.setData("tab-data-type", "tab");
-      e.dataTransfer.setData("tab-data", JSON.stringify(dragData));
+    tab.addEventListener("click", (e) => {
+      // if we have any modifier keys or other buttons then do nothing
+      if(e.ctrlKey || e.metaKey || e.shiftKey || e.altKey || e.button !== 0) {
+        return;
+      }
+
+      // don't change tab if we're closing the tab
+      if(this.aboutToClose) {
+        return;
+      }
+
+      this.changeTab()
     });
+
     tab.title = this.title;
 
     this.view = tab;
-    if(this.active) {
-      tab.classList.add("active-tab");
-    }
 
     let icon = document.createElement("div");
     icon.className = "tab-icon";
@@ -205,6 +206,7 @@ class TabEntry {
   }
 
   close() {
+    this.aboutToClose = true;
     return browser.tabs.remove(this.id);
   }
 
@@ -229,8 +231,10 @@ class TabEntry {
   }
 
   toggleActive(value) {
-    this.view.classList.toggle("active-tab", value);
-    this.group.toggleActive(value);
+    this.active = value;
+    if(this.group) {
+      this.group.toggleActive(this, value);
+    }
     if(value) {
       this.scrollTo();
     }
