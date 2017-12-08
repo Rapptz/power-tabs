@@ -396,8 +396,9 @@ class GroupList {
       entry.toggleVisibility(entry.matchesTitle(this._searchBar.value));
     }
 
+    let activeGroup = this.activeGroup;
     browser.sessions.getTabValue(entry.id, "group-id").then((groupId) => {
-      let group = groupId ? this.getGroup(groupId) : this.activeGroup;
+      let group = groupId ? this.getGroup(groupId) : activeGroup;
       if(group) {
         let relativeTab = tabInfo.hasOwnProperty("openerTabId") ?
                           this.getTab(tabInfo.openerTabId) : group.getRightBefore(entry.index);
