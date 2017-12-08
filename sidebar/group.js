@@ -675,8 +675,7 @@ class Group {
       { name: "separator" },
       {
         name: "Reload All Tabs",
-        isEnabled: () => false,
-        onClick: () => {}
+        onClick: () => this.tabs.forEach((t) => t.reload())
       },
       {
         name: "Sort Tabs By",
