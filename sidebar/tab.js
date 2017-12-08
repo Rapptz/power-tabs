@@ -146,8 +146,23 @@ class TabEntry {
     });
 
     items.push({
-      name: "Move to New Window",
-      onClick: (e) => this.moveToNewWindow()
+      name: "Move To",
+      items: [
+        {
+          name: "New Window",
+          onClick: (e) => this.moveToNewWindow()
+        },
+        {
+          name: "separator"
+        }
+      ].concat(groupList.groups.map((x) => {
+        let g = x;
+        return {
+          name: g.name,
+          isEnabled: () => this.group.uuid !== g.uuid,
+          onClick: (e) => this.attachToNewGroup(g)
+        };
+      }))
     });
 
     items.push({name: "separator"});
@@ -212,6 +227,12 @@ class TabEntry {
 
   moveToNewWindow() {
     return browser.windows.create({ tabId: this.id });
+  }
+
+  attachToNewGroup(group) {
+    this.detach();
+    let relativeTab = group.getRightBefore(this.index);
+    group.addTab(this, relativeTab);
   }
 
   /* end context menu functions */
