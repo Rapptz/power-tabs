@@ -462,17 +462,27 @@ class Group {
     return this.tabs.findIndex((t) => t.id === tabId);
   }
 
+  closeExcept(index) {
+    let copy = this.tabs.concat();
+    for(let i = 0; i < copy.length; ++i) {
+      if(i === index) {
+        continue;
+      }
+      copy[i].close();
+    }
+  }
+
   closeAbove(index) {
     let copy = this.tabs.concat();
     for(let i = 0; i < index; ++i) {
-      browser.tabs.remove(copy[i].id);
+      copy[i].close();
     }
   }
 
   closeBelow(index) {
     let copy = this.tabs.concat();
     for(let i = index + 1; i < this.tabs.length; ++i) {
-      browser.tabs.remove(copy[i].id);
+      copy[i].close();
     }
   }
 

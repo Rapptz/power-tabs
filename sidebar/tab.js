@@ -179,6 +179,12 @@ class TabEntry {
       onClick: (e) => this.group.closeBelow(this.tabIndex)
     });
 
+    items.push({
+      name: "Close Other Tabs",
+      isEnabled: () => this.group.tabs.length >= 2,
+      onClick: (e) => this.group.closeExcept(this.tabIndex)
+    });
+
     items.push({name: "separator"});
     items.push({
       name: "Undo Close Tab",
