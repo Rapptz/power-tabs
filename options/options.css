@@ -1,7 +1,5 @@
 .header {
   font-weight: normal;
-  padding-bottom: 4px;
-  margin-bottom: 4px;
   border-bottom: 1px solid hsla(0, 0%, 0%, 0.2);
 }
 
@@ -16,6 +14,11 @@ h2 {
 
 h3 {
   font-size: 1em;
+}
+
+p {
+  margin: 0;
+  margin-bottom: 0.5em;
 }
 
 form {

@@ -10,8 +10,33 @@
     <label>Reverse Tab Display<input type="checkbox" id="reverseTabDisplay"></label>
   </form>
   <h1 class="header">Group Settings</h1>
+  <p>This is where you find group settings.</p>
   <div id="group-settings">
   </div>
   <script src="options.js"></script>
+
+  <template id="group-template">
+    <h2 id="groupHeader" class="header"></h2>
+    <div class="options">
+      <div class="group-name-container">
+        <span class="group-name-label">Group Name</span>
+        <input id="groupName" type="text">
+        <button id="saveName">Save</button>
+      </div>
+      <h3>Filters</h3>
+      <div class="add-filter">
+        <input type="text">
+        <button>Add Filter</button>
+      </div>
+      <div class="filters"></div>
+    </div>
+  </template>
+
+  <template id="filter-template">
+    <div class="filter">
+      <input type="text" disabled="true">
+      <div class="filter-close"></div>
+    </div>
+  </template>
 </body>
 </html>

@@ -18,56 +18,26 @@ class GroupSetting {
   }
 
   buildView() {
-    this._header = document.createElement("h2");
-    this._header.className = "header";
+    var templ = document.getElementById("group-template").content.cloneNode(true);
+
+    this._header = templ.getElementById("groupHeader");
+    this._header.id = "";
     this._header.innerText = this.name;
 
-    let form = document.createElement("div");
-    form.className = "options";
-
-    /*
-      <div class="options">
-        <div class="group-name-container">
-          <span class="group-name-label">Group Name</span>
-          <input type="text">
-          <button>Save</button>
-        </div>
-        <h3>Filters</h3>
-        <div class="add-filter">
-          <input type="text">
-          <button>Add Filter</button>
-        </div>
-
-        <div class="filters">
-          <div class="filter">
-            <input type="text" disabled="true">
-            <div class="filter-close"></div>
-          </div>
-          ...
-        </div>
-      </div>
-    */
-
-    let groupNameContainer = document.createElement("div");
-    groupNameContainer.className = "group-name-container";
-
-    let label = document.createElement("span");
-    label.className = "group-name-label";
-    label.innerText = "Group Name";
-
-    let nameEdit = document.createElement("input");
-    nameEdit.type = "text";
+    let nameEdit = templ.getElementById("groupName");
+    nameEdit.id = "";
     nameEdit.value = this.name;
     this._nameEdit = nameEdit;
 
-    let saveButton = document.createElement("button");
-    saveButton.innerText = "Save";
+    let saveButton = templ.getElementById("saveName");
+    saveButton.id = "";
 
     saveButton.addEventListener("click", (e) => {
       let newText = this._nameEdit.value.trim();
       if(newText && this.name !== newText) {
         this._nameEdit.classList.remove("invalid");
         this.data.name = newText;
+        this.name = newText;
         this._header.innerText = newText;
         this.save();
       }
@@ -76,36 +46,11 @@ class GroupSetting {
       }
     });
 
-    groupNameContainer.appendChild(label);
-    groupNameContainer.appendChild(nameEdit);
-    groupNameContainer.appendChild(saveButton);
-
-    // filter stuff
-
-    let filterHeader = document.createElement("h3");
-    filterHeader.innerText = "Filters";
-
-    let addFilter = document.createElement("div");
-    addFilter.className = "add-filter";
-
-    let addFilterText = document.createElement("input");
-    addFilterText.type = "text";
-
-    let addFilterButton = document.createElement("button");
-    addFilterButton.innerText = "Add Filter";
-
-    addFilter.appendChild(addFilterText);
-    addFilter.appendChild(addFilterButton);
-
-    form.appendChild(groupNameContainer);
-    form.appendChild(filterHeader);
-    form.appendChild(addFilter);
-
-    this.view = form;
+    this.view = templ;
   }
 
   addView(parent) {
-    parent.appendChild(this._header);
+    // parent.appendChild(this._header);
     parent.appendChild(this.view);
   }
 }
