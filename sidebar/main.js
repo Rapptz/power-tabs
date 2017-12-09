@@ -16,6 +16,10 @@ class GroupList {
       this.addGroup(new Group("untitled"));
     });
 
+    document.getElementById("settings-button").addEventListener("click", () => {
+      browser.runtime.openOptionsPage();
+    });
+
     this._searchBar.addEventListener("keyup", (e) => {
       if(e.key === "Escape" || e.key === "Esc") {
         this._searchBar.value = "";
@@ -45,6 +49,9 @@ class GroupList {
     browser.tabs.onAttached.addListener((tabId, info) => this.onAttached(tabId, info));
     browser.tabs.onUpdated.addListener((tabId, changeInfo, info) => this.onUpdated(tabId, changeInfo, info));
     browser.tabs.onMoved.addListener((tabId, moveInfo) => this.onMoved(tabId, moveInfo));
+
+    // event registration for changes in group settings
+    browser.storage.onChanged.addListener((changes, area) => this.onStorageChange(changes, area));
 
     this._container.addEventListener("dragover", (e) => this.onDragOver(e));
     this._container.addEventListener("dragstart", (e) => this.onDragStart(e));
@@ -581,6 +588,20 @@ class GroupList {
       }
       e.preventDefault();
       this.saveStorage();
+    }
+  }
+
+  onStorageChange(changes, area) {
+    if(area !== "local") {
+      return;
+    }
+
+    if(changes.hasOwnProperty("groups")) {
+      let newGroups = changes["groups"].newValue;
+      for(let data of newGroups) {
+        let group = this.getGroup(data.uuid);
+        group.updateName(data.name, false);
+      }
     }
   }
 }

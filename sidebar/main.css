@@ -58,6 +58,7 @@ html, body {
 #search {
   flex: 2;
   border: none;
+  overflow: auto;
 }
 
 #cancel-search-icon {
@@ -287,6 +288,12 @@ details[open] .summary-icon {
   background-position: center;
 }
 
+#settings-button {
+  background-image: url("../icons/settings.svg");
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
 #container {
   overflow-y: auto;
   overflow-x: hidden;
@@ -372,3 +379,23 @@ details[open] .summary-icon {
   height: 12px;
 }
 
+
+/* media queries */
+
+@media (max-width: 215px) {
+  /* hide settings button on small sizes */
+  #settings-button {
+    display: none;
+  }
+}
+
+@media (max-width: 190px) {
+  /* hide new group button on small sizes */
+  #new-group-button {
+    display: none;
+  }
+
+  #search-icon {
+    display: none;
+  }
+}

@@ -1,0 +1,48 @@
+.header {
+  font-weight: normal;
+  padding-bottom: 4px;
+  margin-bottom: 4px;
+  border-bottom: 1px solid hsla(0, 0%, 0%, 0.2);
+}
+
+h1 {
+  font-size: 1.5em;
+
+}
+
+h2 {
+  font-size: 1.25em;
+}
+
+h3 {
+  font-size: 1em;
+}
+
+form {
+  display: grid;
+}
+
+.group-name-container {
+  display: flex;
+}
+
+.group-name-label {
+  flex: 2;
+}
+
+.group-name-container > input {
+  margin-right: 4px;
+}
+
+.add-filter {
+  display: flex;
+}
+
+.add-filter > input {
+  flex: 2;
+  margin-right: 4px;
+}
+
+input.invalid {
+  border: 1px solid #ff0039;
+}

@@ -26,6 +26,10 @@
         }
     },
 
+    "options_ui": {
+        "page": "options/options.html"
+    },
+
     "sidebar_action": {
         "default_title": "Power Tabs",
         "default_panel": "sidebar/main.html",

@@ -622,12 +622,12 @@ class Group {
     this._summaryView.replaceChild(this._summaryNameView, this._editNameView);
   }
 
-  updateName(newName) {
+  updateName(newName, save=true) {
     // don't update the name if the user input nothing
     if(newName) {
       this.name = newName;
       this._summaryNameView.innerText = newName;
-      if(this.parent) {
+      if(save && this.parent) {
         this.parent.saveStorage();
       }
     }
