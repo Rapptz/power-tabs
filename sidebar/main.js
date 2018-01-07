@@ -567,7 +567,7 @@ class GroupList {
       // we're drag and dropping tabs into a group
       await this._dropTabs(e, groupIndex);
     }
-    else {
+    else if(this._dragContext.group !== null) {
       // we're drag and dropping a group
       let group = this.groups[groupIndex];
       if(group === this._dragContext.group) {
