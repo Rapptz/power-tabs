@@ -2,7 +2,7 @@
     "manifest_version": 2,
     "name": "Power Tabs",
     "version": "1.0",
-    "description": "Search through tabs",
+    "description": "Vertical tab groups with tab searching",
     "applications": {
         "gecko": {
             "id": "testing_my_fucking_addon@holyfuckmozilla.com",
@@ -20,9 +20,9 @@
     "commands": {
         "_execute_sidebar_action": {
             "suggested_key": {
-                "default": "Ctrl+Period"
+                "default": "Ctrl+Shift+Period"
             },
-            "description": "Opens the Quick Tab Switcher."
+            "description": "Opens the Power Tab menu."
         }
     },
 
