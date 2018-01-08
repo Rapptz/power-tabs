@@ -26,6 +26,11 @@
         }
     },
 
+    "icons": {
+        "48": "icons/icon.svg",
+        "96": "icons/icon.svg"
+    },
+
     "options_ui": {
         "page": "options/options.html"
     },
@@ -33,6 +38,12 @@
     "sidebar_action": {
         "default_title": "Power Tabs",
         "default_panel": "sidebar/main.html",
+        "default_icon": "icons/icon.svg",
         "browser_style": true
+    },
+
+    "browser_action": {
+        "browser_style": true,
+        "default_icon": "icons/icon.svg"
     }
 }
