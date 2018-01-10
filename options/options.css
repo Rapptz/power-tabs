@@ -5,7 +5,7 @@
 
 h1 {
   font-size: 1.5em;
-
+  font-weight: normal;
 }
 
 h2 {
@@ -21,29 +21,43 @@ p {
   margin-bottom: 0.5em;
 }
 
-form {
-  display: grid;
-}
-
-.group-name-container {
+.settings-group {
   display: flex;
+  align-items: center;
+  box-sizing: border-box;
+  margin-bottom: 8px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid #D7D7DB;
 }
 
-.group-name-label {
-  flex: 2;
+.settings-group:last-child {
+  border-bottom: none;
 }
 
-.group-name-container > input {
+.label {
+  width: 40%;
+}
+
+.aside {
+  color: gray;
+  margin-inline-start: 1em;
+  font-size: 0.85em;
+}
+
+.remove-border {
+  border-bottom: none;
+}
+
+.group-header {
+  margin-top: 16px;
+}
+
+.setting {
   margin-right: 4px;
 }
 
-.add-filter {
-  display: flex;
-}
-
-.add-filter > input {
-  flex: 2;
-  margin-right: 4px;
+.assigned-domains {
+  min-width: 150px;
 }
 
 input.invalid {

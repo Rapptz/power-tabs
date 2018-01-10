@@ -5,37 +5,38 @@
   <link rel="stylesheet" href="options.css"/>
 </head>
 <body>
-  <h1 class="header">Settings</h1>
+  <h1>Settings</h1>
   <form class="options">
-    <label>Reverse Tab Display<input type="checkbox" id="reverseTabDisplay"></label>
+    <div class="settings-group">
+      <span class="label">Reverse Tab Display</span>
+      <input type="checkbox" id="reverseTabDisplay">
+    </div>
+    <div class="settings-group">
+      <span class="label">Open sidebar when pressing toolbar button</span>
+      <input class="setting" type="checkbox" id="openSideBarOnToolbar">
+    </div>
   </form>
-  <h1 class="header">Group Settings</h1>
-  <p>This is where you find group settings.</p>
   <div id="group-settings">
   </div>
   <script src="options.js"></script>
 
   <template id="group-template">
-    <h2 id="groupHeader" class="header"></h2>
+    <h1 class="group-header" id="groupHeader"></h2>
     <div class="options">
-      <div class="group-name-container">
-        <span class="group-name-label">Group Name</span>
-        <input id="groupName" type="text">
-        <button id="saveName">Save</button>
+      <div class="settings-group">
+        <span class="label">Name</span>
+        <input class="setting" id="groupName" type="text">
       </div>
-      <h3>Filters</h3>
-      <div class="add-filter">
-        <input type="text">
-        <button>Add Filter</button>
+      <div class="settings-group">
+        <div class="label">
+          Assigned Domains
+          <div class="aside">
+            You can delete assigned domains by selecting domains and pressing
+            Delete
+          </div>
+        </div>
+        <select id="assignedDomains" class="assigned-domains setting" size=5 multiple></select>
       </div>
-      <div class="filters"></div>
-    </div>
-  </template>
-
-  <template id="filter-template">
-    <div class="filter">
-      <input type="text" disabled="true">
-      <div class="filter-close"></div>
     </div>
   </template>
 </body>
