@@ -11,6 +11,7 @@ class GroupList {
 
     this._searchBar = document.getElementById("search");
     this._cancelButton = document.getElementById("cancel-search-icon");
+    this._groupBaton = null;
 
     document.getElementById("new-group-button").addEventListener("click", () => {
       this.addGroup(new Group("untitled"));
@@ -243,19 +244,8 @@ class GroupList {
   }
 
   createTab(opts) {
-    let group = opts.group || this.activeGroup;
-    let active = opts.active || true;
-    browser.tabs.create({active: active}).then((tabInfo) => {
-      // this function takes priority over the onCreated function
-      // So let's do this after the current "tick" of the event loop
-      setTimeout(() => {
-        let oldEntry = this.getTab(tabInfo.id);
-        if(oldEntry.group !== group) {
-          oldEntry.detach();
-          group.addTab(oldEntry);
-        }
-      }, 0);
-    });
+    this._groupBaton = opts.group || this.activeGroup;
+    browser.tabs.create({active: opts.active || true});
   }
 
   beginBatchMove() {
@@ -390,11 +380,6 @@ class GroupList {
 
   onCreated(tabInfo) {
     console.log(`onCreated: ${this.windowId}/${tabInfo.id}`);
-    // check if this tab was already created and has a group
-    let oldEntry = this.getTab(tabInfo.id);
-    if(oldEntry && oldEntry.group) {
-      return;
-    }
 
     // update the positions of the tabs
     for(var tab of this._tabCache.values()) {
@@ -410,9 +395,9 @@ class GroupList {
       entry.toggleVisibility(entry.shouldHide(this._searchBar.value));
     }
 
-    let activeGroup = this.activeGroup;
+    let assignedGroup = this._groupBaton || this.activeGroup;
     browser.sessions.getTabValue(entry.id, "group-id").then((groupId) => {
-      let group = groupId ? this.getGroup(groupId) : activeGroup;
+      let group = groupId ? this.getGroup(groupId) : assignedGroup;
       if(group) {
         let relativeTab = tabInfo.hasOwnProperty("openerTabId") ?
                           this.getTab(tabInfo.openerTabId) : group.getRightBefore(entry.index);
@@ -422,6 +407,7 @@ class GroupList {
         }
       }
     });
+    this._groupBaton = null;
   }
 
   _removeTab(tabId) {
