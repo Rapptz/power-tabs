@@ -1,0 +1,35 @@
+<html>
+<head>
+  <meta http-equiv="content-type" content="text/html; charset=utf-8">
+  <title>Power Tabs Confirm Navigation</title>
+  <link xmlns="http://www.w3.org/1999/xhtml" rel="stylesheet" href="chrome://browser/skin/aboutNetError.css" type="text/css" media="all" />
+  <link rel="stylesheet" href="confirm.css" />
+</head>
+<body>
+  <main>
+    <div class="title">
+      <h1 class="title-text">Open this site in your assigned group?</h1>
+    </div>
+    <form id="redirect-form">
+      <p>
+        You asked Power Tabs to always open <dfn class="group-name"></dfn> for this site:<br />
+      </p>
+      <div id="redirect-url"></div>
+      <p>Would you still like to open in this current group?</p>
+      <br />
+      <br />
+      <label for="never-ask" class="check-label">
+        <input id="never-ask" type="checkbox" />
+        Remember my decision for this site
+      </label>
+      <br />
+      <div class="button-container">
+        <button id="deny" class="button">Open in <dfn id="current-group-name">Current</dfn> Group</button>
+        <button id="confirm" class="button primary" autofocus>Open in <dfn class="group-name"></dfn> Group</button>
+      </div>
+    </form>
+  </main>
+
+  <script src="confirm.js"></script>
+</body>
+</html>

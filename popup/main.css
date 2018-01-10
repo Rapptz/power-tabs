@@ -1,0 +1,50 @@
+body {
+  width: 310px;
+  height: 90%;
+}
+
+#container {
+  margin: 16px;
+}
+
+.small-label {
+  font-size: 13px;
+}
+
+#tab-info {
+  display: flex;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.truncate-text {
+  mask-image: linear-gradient(to left, transparent, black 1em);
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.tab-title {
+  flex: 1 0;
+  font-size: 17px;
+}
+
+.tab-icon {
+  width: 16px;
+  height: 16px;
+  margin-right: 4px;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-origin: content-box;
+}
+
+#checkbox-container {
+  display: flex;
+  align-items: center;
+  margin-left: 16px;
+}
+
+#always-open-label {
+  font-size: 11px;
+  color: #737373;
+}

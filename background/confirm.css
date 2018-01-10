@@ -1,0 +1,46 @@
+.group-name {
+  font-weight: bold;
+}
+
+.title {
+  background-image: none;
+}
+
+main {
+  background: url(/icons/icon.svg) no-repeat;
+  background-size: 128px;
+  background-position: 0px 32px;
+  margin-inline-start: -128px;
+  padding-inline-start: 144px;
+}
+
+@media only screen and (max-width: 900px) {
+  main {
+    background: none;
+  }
+}
+
+dfn {
+  font-style: normal;
+}
+
+.check-label {
+  align-items: center;
+  display: flex;
+}
+
+#redirect-url {
+  background: #efefef;
+  border-radius: 2px;
+  line-height: 1.5;
+  font-weight: bold;
+  padding: 8px;
+  display: flex;
+  align-items: center;
+}
+
+#redirect-url img {
+  width: 16px;
+  height: 16px;
+  margin-right: 4px;
+}

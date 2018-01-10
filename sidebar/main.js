@@ -594,6 +594,17 @@ class GroupList {
 
 
 var groupList = new GroupList();
+var port = browser.runtime.connect({name: "sidebar-port"});
+
+port.onMessage.addListener((message) => {
+  if(message.method == "moveTabGroup") {
+    let tab = groupList.getTab(message.tabId);
+    let group = groupList.getGroup(message.groupId);
+    tab.detach();
+    group.loadTab(tab);
+    group.repositionTab(tab.id, tab.index);
+  }
+});
 
 async function verifyCache() {
   let actualTabs = await browser.tabs.query({currentWindow: true});

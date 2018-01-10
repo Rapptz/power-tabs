@@ -11,10 +11,14 @@
     },
 
     "permissions": [
+        "<all_urls>",
         "activeTab",
         "tabs",
         "storage",
-        "sessions"
+        "sessions",
+        "webRequestBlocking",
+        "webRequest",
+        "history"
     ],
 
     "commands": {
@@ -31,6 +35,10 @@
         "96": "icons/icon.svg"
     },
 
+    "background": {
+        "scripts": ["background/listen.js"]
+    },
+
     "options_ui": {
         "page": "options/options.html"
     },
@@ -44,6 +52,11 @@
 
     "browser_action": {
         "browser_style": true,
-        "default_icon": "icons/icon.svg"
-    }
+        "default_icon": "icons/icon.svg",
+        "default_title": "Power Tabs"
+    },
+
+    "web_accessible_resources": [
+        "background/confirm.html"
+    ]
 }
