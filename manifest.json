@@ -24,7 +24,7 @@
     "commands": {
         "_execute_sidebar_action": {
             "suggested_key": {
-                "default": "Ctrl+Shift+Period"
+                "default": "Ctrl+Shift+Comma"
             },
             "description": "Opens the Power Tab menu."
         }
