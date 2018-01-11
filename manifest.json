@@ -1,11 +1,13 @@
 {
     "manifest_version": 2,
     "name": "Power Tabs",
-    "version": "1.0",
+    "version": "1.0.0",
+    "default_locale": "en",
+    "homepage_url": "https://github.com/Rapptz/power-tabs",
     "description": "Vertical tab groups with tab searching",
     "applications": {
         "gecko": {
-            "id": "testing_my_fucking_addon@holyfuckmozilla.com",
+            "id": "power-tabs@rapptz-addons.com",
             "strict_min_version": "57.0"
         }
     },
