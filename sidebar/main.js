@@ -88,7 +88,7 @@ class GroupList {
     let windowInfo = await browser.windows.getCurrent({populate: true});
     this.windowId = windowInfo.id;
 
-    let old = await browser.storage.local.get("groups");
+    let old = await browser.storage.local.get(["groups", "reverseTabDisplay"]);
     if(!old.hasOwnProperty("groups")) {
       // no pre-existing group so just make a dummy one
       // and fill it with the current tab data
@@ -104,10 +104,11 @@ class GroupList {
       }
 
       this.addGroup(group);
+      group.toggleReverseDisplay(old.reverseTabDisplay);
     }
     else {
       // load our groups from localStorage
-      await this.loadFromLocalStorage(old.groups, windowInfo.tabs);
+      await this.loadFromLocalStorage(old.groups, old.reverseTabDisplay, windowInfo.tabs);
     }
 
     if(this._activeTab) {
@@ -115,7 +116,7 @@ class GroupList {
     }
   }
 
-  async loadFromLocalStorage(groups, tabs) {
+  async loadFromLocalStorage(groups, reverseTabDisplay, tabs) {
     // fast lookup
     let lookup = new Map();
 
@@ -159,6 +160,7 @@ class GroupList {
     // sort the groups and add to the container
     for(let group of this.groups) {
       group.sortByPosition();
+      group.toggleReverseDisplay(reverseTabDisplay);
       this._container.appendChild(group.view);
     }
   }
@@ -582,6 +584,12 @@ class GroupList {
       return;
     }
 
+    if(changes.hasOwnProperty("reverseTabDisplay")) {
+      for(let group of this.groups) {
+        group.toggleReverseDisplay(changes.reverseTabDisplay.newValue);
+      }
+    }
+
     if(changes.hasOwnProperty("groups")) {
       let newGroups = changes["groups"].newValue;
       for(let data of newGroups) {
@@ -591,7 +599,6 @@ class GroupList {
     }
   }
 }
-
 
 var groupList = new GroupList();
 var port = browser.runtime.connect({name: "sidebar-port"});

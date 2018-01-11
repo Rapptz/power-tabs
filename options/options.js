@@ -112,7 +112,24 @@ function loadGroupSettings(data) {
   }
 }
 
+function saveSettings(key, value) {
+  let obj = {};
+  obj[key] = value;
+  browser.storage.local.set(obj);
+}
+
 function loadRegularSettings(data) {
+  let reverseTabDisplay = document.getElementById("reverseTabDisplay");
+  reverseTabDisplay.checked = data.reverseTabDisplay;
+  reverseTabDisplay.addEventListener("click", (e) => {
+    saveSettings("reverseTabDisplay", reverseTabDisplay.checked);
+  });
+
+  let openSidebarOnClick = document.getElementById("openSidebarOnClick");
+  openSidebarOnClick.checked = data.openSidebarOnClick;
+  openSidebarOnClick.addEventListener("click", (e) => {
+    saveSettings("openSidebarOnClick", openSidebarOnClick.checked);
+  });
 
 }
 

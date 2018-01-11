@@ -352,6 +352,10 @@ class Group {
     this._sortSelected();
   }
 
+  toggleReverseDisplay(value) {
+    this._listView.classList.toggle("reverse-group", value);
+  }
+
   addTab(tabEntry, relativeTo) {
     tabEntry.group = this;
     if(!relativeTo) {

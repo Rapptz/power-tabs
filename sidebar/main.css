@@ -182,6 +182,10 @@ html, body {
 
 /* tab group related stuff */
 
+.reverse-group {
+  flex-direction: column-reverse !important;
+}
+
 .tab-group {
   padding-bottom: 5px;
 }

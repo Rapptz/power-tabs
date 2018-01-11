@@ -3,6 +3,8 @@
 var _exemptTabs = new Map();
 var _port;
 
+var _openSidebarOnClick = false;
+
 function encodeURL(url) {
   return encodeURIComponent(url).replace(/[!'()*]/g, (c) => {
     const charCode = c.charCodeAt(0).toString(16);
@@ -131,7 +133,9 @@ function onMessage(message) {
 }
 
 function onClicked(tab) {
-  browser.sidebarAction.open();
+  if(_openSidebarOnClick) {
+    browser.sidebarAction.open();
+  }
   browser.browserAction.setPopup({
     popup: "/popup/main.html"
   });
@@ -141,7 +145,43 @@ function onClicked(tab) {
   });
 }
 
+async function ensureDefaultSettings() {
+  const settings = {
+    reverseTabDisplay: false,
+    openSidebarOnClick: false
+  };
+
+  let keys = Object.keys(settings);
+  let before = await browser.storage.local.get(keys);
+
+  // fresh install, can just add the default settings right away
+  if(Object.keys(before).length === 0) {
+    await browser.storage.local.set(settings);
+    return;
+  }
+
+  for(let key of keys) {
+    if(before.hasOwnProperty(key)) {
+      // already set explicitly so ignore it
+      continue;
+    }
+
+    before[key] = settings[key];
+  }
+
+  _openSidebarOnClick = before.openSidebarOnClick;
+  await browser.storage.local.set(before);
+}
+
+function onSettingChange(changes, area) {
+  if(changes.hasOwnProperty("openSidebarOnClick")) {
+    _openSidebarOnClick = changes.openSidebarOnClick.newValue;
+  }
+}
+
+ensureDefaultSettings();
 browser.runtime.onConnect.addListener(portConnected);
 browser.runtime.onMessage.addListener(onMessage);
 browser.browserAction.onClicked.addListener(onClicked);
+browser.storage.onChanged.addListener(onSettingChange);
 browser.webRequest.onBeforeRequest.addListener(onBeforeRequest, {urls: ["<all_urls>"], types: ["main_frame"]}, ["blocking"])
