@@ -212,9 +212,9 @@ class Group {
   }
 
   removeSelected(tab) {
+    tab.view.classList.remove("selected-tab");
     let index = this._selected.indexOf(tab);
     if(index !== -1) {
-      tab.view.classList.remove("selected-tab");
       this._selected.splice(index, 1);
     }
   }

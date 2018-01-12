@@ -41,8 +41,6 @@ class GroupList {
       this.displayAll();
     });
 
-    this.populate();
-
     // event registration for tab syncing
     browser.tabs.onActivated.addListener((info) => this.onActivated(info));
     browser.tabs.onCreated.addListener((info) => this.onCreated(info));
@@ -107,6 +105,7 @@ class GroupList {
 
       this.addGroup(group);
       group.toggleReverseDisplay(old.reverseTabDisplay);
+      group.sortByPosition();
     }
     else {
       // load our groups from localStorage
@@ -197,10 +196,8 @@ class GroupList {
         deadTabs.push(tab);
       }
     }
-
-    for(let tab of deadTabs) {
-      tab.close();
-    }
+    deadTabs.forEach((t) => t.close());
+    this.groups.forEach((g) => g.sortByPosition());
   }
 
   async resync() {
@@ -211,10 +208,10 @@ class GroupList {
     }
   }
 
-  cleanSelectedExcept(group) {
+  clearSelectedExcept(group) {
     for(let g of this.groups) {
-      if(g !== group) {
-        g.cleanSelected();
+      if(g.uuid !== group.uuid) {
+        g.clearSelected();
       }
     }
   }
@@ -426,7 +423,7 @@ class GroupList {
     if(tab) {
       tab.toggleActive(true);
       if(tab.group !== this._activeTab.group) {
-        this.cleanSelectedExcept(tab.group);
+        this.clearSelectedExcept(tab.group);
         if(save) {
           this.saveStorage();
         }
@@ -484,9 +481,11 @@ class GroupList {
     this._tabCache.delete(tabId);
 
     // update positions
-    for(var entry of this._tabCache.values()) {
-      if(entry.index >= tab.index) {
-        entry.index -= 1;
+    if(tab) {
+      for(var entry of this._tabCache.values()) {
+        if(entry.index >= tab.index) {
+          entry.index -= 1;
+        }
       }
     }
   }
@@ -661,42 +660,30 @@ class GroupList {
   }
 }
 
-var groupList = new GroupList();
-var port = browser.runtime.connect({name: "sidebar-port"});
+// for debugging purposes
+var groupList;
+var port;
 
-port.onMessage.addListener((message) => {
-  if(message.method == "moveTabGroup") {
-    let tab = groupList.getTab(message.tabId);
-    let group = groupList.getGroup(message.groupId);
-    tab.detach();
-    group.loadTab(tab);
-    group.repositionTab(tab.id, tab.index);
-  }
-});
+(async () => {
+  groupList = new GroupList();
+  await groupList.populate();
 
-async function verifyCache() {
-  let actualTabs = await browser.tabs.query({currentWindow: true});
-  let failed = 0;
-  for(var tab of actualTabs) {
-    let cached = groupList.getTab(tab.id);
-    if(cached.index !== tab.index) {
-      console.log(`Incorrect index for ${tab.id} (${tab.index} vs cached ${cached.index})`);
-      ++failed;
+  port = browser.runtime.connect({name: groupList.windowId.toString() });
+  groupList.port = port;
+
+  port.onMessage.addListener((message) => {
+    if(message.method == "moveTabGroup") {
+      let tab = groupList.getTab(message.tabId);
+      let group = groupList.getGroup(message.groupId);
+      if(tab && group) {
+        tab.detach();
+        group.loadTab(tab);
+        group.repositionTab(tab.id, tab.index);
+      }
     }
-  }
-  console.log(`${failed} failures`);
-}
+  });
 
-function debugGroup(index) {
-  let g = groupList.groups[index];
-  for(var t of g.tabs) {
-    console.log(`${t.id} -> ${t.title}`);
-  }
-}
-
-function checkTabs(...tabIds) {
-  for(var tabId of tabIds) {
-    let tab = groupList.getTab(tabId);
-    console.log(`${tab.id} -> ${tab.title}`);
-  }
-}
+  window.addEventListener("unload", (e) => {
+    port.disconnect();
+  });
+})();
