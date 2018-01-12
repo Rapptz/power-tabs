@@ -8,6 +8,7 @@ class GroupList {
     this._contextMenu = null;
     this._signalBatchMove = false;
     this._resetDragContext();
+    this._reverseTabDisplay = false;
 
     this._searchBar = document.getElementById("search");
     this._cancelButton = document.getElementById("cancel-search-icon");
@@ -89,6 +90,7 @@ class GroupList {
     this.windowId = windowInfo.id;
 
     let old = await browser.storage.local.get(["groups", "reverseTabDisplay"]);
+    this._reverseTabDisplay = old.reverseTabDisplay;
     if(!old.hasOwnProperty("groups")) {
       // no pre-existing group so just make a dummy one
       // and fill it with the current tab data
@@ -108,7 +110,7 @@ class GroupList {
     }
     else {
       // load our groups from localStorage
-      await this.loadFromLocalStorage(old.groups, old.reverseTabDisplay, windowInfo.tabs);
+      await this.loadFromLocalStorage(old.groups, windowInfo.tabs);
     }
 
     if(this._activeTab) {
@@ -116,7 +118,7 @@ class GroupList {
     }
   }
 
-  async loadFromLocalStorage(groups, reverseTabDisplay, tabs) {
+  async loadFromLocalStorage(groups, tabs) {
     // fast lookup
     let lookup = new Map();
 
@@ -160,8 +162,44 @@ class GroupList {
     // sort the groups and add to the container
     for(let group of this.groups) {
       group.sortByPosition();
-      group.toggleReverseDisplay(reverseTabDisplay);
+      group.toggleReverseDisplay(this._reverseTabDisplay);
       this._container.appendChild(group.view);
+    }
+  }
+
+  resyncFromGroupData(groups) {
+    this.groups = [];
+    while(this._container.lastChild) {
+      this._container.removeChild(this._container.lastChild);
+    }
+
+    let lookup = new Map();
+    for(let data of groups) {
+      let group = new Group(data);
+      group.parent = this;
+      this.groups.push(group);
+      this._container.appendChild(group.view);
+      lookup.set(group.uuid, group);
+    }
+
+    let deadTabs = [];
+    for(let tab of this._tabCache.values()) {
+      if(!tab.group) {
+        // not sure what happened here?
+        continue;
+      }
+
+      let group = lookup.get(tab.group.uuid);
+      if(group) {
+        group.addTab(tab);
+      }
+      else {
+        deadTabs.push(tab);
+      }
+    }
+
+    for(let tab of deadTabs) {
+      tab.close();
     }
   }
 
@@ -196,6 +234,14 @@ class GroupList {
     this.saveStorage();
   }
 
+  // meant to be used internally inside onStorageChange
+  addGroupAt(index, group) {
+    group.parent = this;
+    this.groups.splice(index, 0, group);
+    let beforeNode = this.groups[index].view;
+    this._container.insertBefore(group.view, beforeNode);
+  }
+
   displayAll() {
     for(let tab of this._tabCache.values()) {
       tab.show();
@@ -228,6 +274,19 @@ class GroupList {
     this._container.removeChild(group.view);
     this.groups.splice(index, 1);
     this.saveStorage();
+  }
+
+  /*
+    This is meant to be used internally to sync with localStorage.
+  */
+  removeGroupByIndex(index) {
+    let group = this.groups[index];
+    for(let tab of group.tabs) {
+      tab.close();
+    }
+
+    this._container.removeChild(group.view);
+    this.groups.splice(index, 1);
   }
 
   get activeGroup() {
@@ -317,8 +376,7 @@ class GroupList {
       return;
     }
 
-    this.setActive(this.getTab(info.tabId));
-    this.saveStorage();
+    this.setActive(this.getTab(info.tabId), true);
   }
 
   onMoved(tabId, moveInfo) {
@@ -360,7 +418,7 @@ class GroupList {
     tab.index = moveInfo.toIndex;
   }
 
-  setActive(tab) {
+  setActive(tab, save=false) {
     if(this._activeTab) {
       this._activeTab.toggleActive(false);
     }
@@ -369,6 +427,9 @@ class GroupList {
       tab.toggleActive(true);
       if(tab.group !== this._activeTab.group) {
         this.cleanSelectedExcept(tab.group);
+        if(save) {
+          this.saveStorage();
+        }
       }
       this._activeTab = tab;
     }
@@ -588,17 +649,14 @@ class GroupList {
     }
 
     if(changes.hasOwnProperty("reverseTabDisplay")) {
+      this._reverseTabDisplay = changes.reverseTabDisplay.newValue;
       for(let group of this.groups) {
-        group.toggleReverseDisplay(changes.reverseTabDisplay.newValue);
+        group.toggleReverseDisplay(this._reverseTabDisplay);
       }
     }
 
     if(changes.hasOwnProperty("groups")) {
-      let newGroups = changes["groups"].newValue;
-      for(let data of newGroups) {
-        let group = this.getGroup(data.uuid);
-        group.updateName(data.name, false);
-      }
+      this.resyncFromGroupData(changes.groups.newValue);
     }
   }
 }

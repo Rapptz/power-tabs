@@ -31,8 +31,11 @@ class Group {
     this.view = details;
 
     details.addEventListener("toggle", () => {
+      let changed = details.open !== this.open;
       this.open = details.open;
-      this.parent.saveStorage();
+      if(changed) {
+        this.parent.saveStorage();
+      }
     });
 
     details.addEventListener("dragenter", (e) => {
@@ -707,7 +710,7 @@ class Group {
         name: "Delete",
         isEnabled: () => groupList.groupCount > 1,
         onClick: (e) => {
-          if(this.tabs.length == 0 || window.confirm(`Are you sure? This will close ${this.tabs.length} tabs.`)) {
+          if(this.tabs.length == 0 || window.confirm(`Are you sure? This will close all the tabs that belong to this group.`)) {
             groupList.removeGroup(this);
           }
         }
