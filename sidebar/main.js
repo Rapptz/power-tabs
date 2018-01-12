@@ -382,6 +382,9 @@ class GroupList {
 
   onCreated(tabInfo) {
     console.log(`onCreated: ${this.windowId}/${tabInfo.id}`);
+    if(tabInfo.windowId !== this.windowId) {
+      return;
+    }
 
     // update the positions of the tabs
     for(var tab of this._tabCache.values()) {
