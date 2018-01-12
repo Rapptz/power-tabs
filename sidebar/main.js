@@ -209,8 +209,9 @@ class GroupList {
   }
 
   clearSelectedExcept(group) {
+    let uuid = group && group.uuid;
     for(let g of this.groups) {
-      if(g.uuid !== group.uuid) {
+      if(g.uuid !== uuid) {
         g.clearSelected();
       }
     }
@@ -427,6 +428,13 @@ class GroupList {
         if(save) {
           this.saveStorage();
         }
+        if(tab.group) {
+          this.port.postMessage({
+            method: "activeGroup",
+            windowId: this.windowId,
+            groupId: tab.group.uuid
+          });
+        }
       }
       this._activeTab = tab;
     }
@@ -466,7 +474,7 @@ class GroupList {
                           this.getTab(tabInfo.openerTabId) : group.getRightBefore(entry.index);
         group.addTab(entry, relativeTab);
         if(entry.active) {
-          this.setActive(entry);
+          this.setActive(entry, true);
         }
       }
     });

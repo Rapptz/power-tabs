@@ -1,9 +1,16 @@
 // domain names that have been temporarily been exempted
 // a mapping of tabId => Set([hostname])
 var _exemptTabs = new Map();
-var _port;
 
+// windowId -> port
+var _ports = new Map();
 var _openSidebarOnClick = false;
+
+function postMessage(msg) {
+  for(let port of _ports.values()) {
+    port.postMessage(msg);
+  }
+}
 
 function encodeURL(url) {
   return encodeURIComponent(url).replace(/[!'()*]/g, (c) => {
@@ -95,7 +102,7 @@ function redirectTab(message) {
 function moveTabToGroup(message) {
   browser.sessions.setTabValue(message.tabId, "group-id", message.groupId);
   redirectTab(message);
-  _port.postMessage({
+  postMessage({
     method: "moveTabGroup",
     tabId: message.tabId,
     groupId: message.groupId
@@ -106,11 +113,15 @@ function onPortMessage(message) {
   if(message.method == "invalidateExempt") {
     _exemptTabs.delete(message.tabId);
   }
+  else if(message.method == "activeGroup") {
+    browser.sessions.setWindowValue(message.windowId, "active-group-id", message.groupId);
+  }
 }
 
 function portConnected(port) {
-  _port = port;
-  _port.onMessage.addListener(onPortMessage);
+  _ports.set(parseInt(port.name), port);
+  port.onMessage.addListener(onPortMessage);
+  port.postMessage({method: "connected"});
 }
 
 function onMessage(message) {
@@ -173,6 +184,35 @@ async function ensureDefaultSettings() {
   await browser.storage.local.set(before);
 }
 
+async function prepare() {
+  let tabs = await browser.tabs.query({});
+  for(let tab of tabs) {
+    let groupId = await browser.sessions.getTabValue(tab.id, "group-id");
+    if(groupId) {
+      if(tab.active) {
+        await browser.sessions.setWindowValue(tab.windowId, "active-group-id", groupId);
+      }
+    }
+  }
+}
+
+async function onTabCreated(tabInfo) {
+  let groupId = await browser.sessions.getWindowValue(tabInfo.windowId, "active-group-id");
+  await browser.sessions.setTabValue(tabInfo.id, "group-id", groupId);
+}
+
+async function onTabActive(activeInfo) {
+  let groupId = await browser.sessions.getTabValue(activeInfo.tabId, "group-id");
+  let activeGroupId = await browser.sessions.getWindowValue(activeInfo.windowId, "active-group-id");
+  if(groupId !== activeGroupId) {
+    await browser.sessions.setWindowValue(activeInfo.windowId, "active-group-id", groupId);
+  }
+}
+
+function onWindowRemoved(windowId) {
+  _ports.delete(windowId);
+}
+
 function onSettingChange(changes, area) {
   if(changes.hasOwnProperty("openSidebarOnClick")) {
     _openSidebarOnClick = changes.openSidebarOnClick.newValue;
@@ -180,8 +220,12 @@ function onSettingChange(changes, area) {
 }
 
 ensureDefaultSettings();
+prepare();
 browser.runtime.onConnect.addListener(portConnected);
 browser.runtime.onMessage.addListener(onMessage);
+browser.tabs.onCreated.addListener(onTabCreated);
+browser.tabs.onActivated.addListener(onTabActive);
+browser.windows.onRemoved.addListener(onWindowRemoved);
 browser.browserAction.onClicked.addListener(onClicked);
 browser.storage.onChanged.addListener(onSettingChange);
 browser.webRequest.onBeforeRequest.addListener(onBeforeRequest, {urls: ["<all_urls>"], types: ["main_frame"]}, ["blocking"])
