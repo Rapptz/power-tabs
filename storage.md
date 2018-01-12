@@ -4,10 +4,12 @@ This is documentation to better understand and document the current layout of th
 
 ### Storage
 
-|        Keys       |  Type  |            Value            |
-| :---------------: | :----: | :-------------------------: |
-|      `groups`     | Array  | An array of `Group` objects |
-| `page:<url here>` | Object |   An `Assignment` object.   |
+|         Keys         |   Type  |                              Value                               |
+| :------------------: | :-----: | :--------------------------------------------------------------: |
+|       `groups`       |  Array  |                   An array of `Group` objects                    |
+|  `page:<url here>`   |  Object |                     An `Assignment` object.                      |
+| `reverseTabDisplay`  | Boolean |            Whether to reverse tab display in groups.             |
+| `openSidebarOnClick` | Boolean | Whether to open the sideback when the toolbar button is clicked. |
 
 
 ### Objects
