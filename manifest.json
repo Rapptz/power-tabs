@@ -2,7 +2,6 @@
     "manifest_version": 2,
     "name": "Power Tabs",
     "version": "1.0.0",
-    "default_locale": "en",
     "homepage_url": "https://github.com/Rapptz/power-tabs",
     "description": "Vertical tab groups with tab searching",
     "applications": {
