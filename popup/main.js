@@ -1,5 +1,11 @@
 var currentTab = null;
 var currentGroup = null;
+var NEW_TAB_PAGES = new Set([
+    "about:startpage",
+    "about:newtab",
+    "about:home",
+    "about:blank"
+]);
 
 browser.tabs.query({active: true, windowId: browser.windows.WINDOW_ID_CURRENT}).then((tabs) => {
   if(tabs.length > 0) {
@@ -27,7 +33,7 @@ async function updateTabDisplay() {
   });
 
   let name = document.createElement("div");
-  name.innerText = currentTab.title;
+  name.textContent = currentTab.title;
   name.title = currentTab.title;
   name.classList.add("tab-title");
   name.classList.add("truncate-text");
@@ -51,12 +57,19 @@ async function updateTabDisplay() {
   currentGroup = storage.groups.find((g) => g.uuid === groupId);
   if(currentGroup === null) {
     // not sure how this happened
-    label.innerText = "Unable to find group...";
-    groupNameLabel.innerText = "?";
+    label.textContent = "Unable to find group...";
+    groupNameLabel.textContent = "?";
     return;
   }
 
   let domainName = new URL(currentTab.url).hostname;
+  if(!domainName || NEW_TAB_PAGES.has(currentTab.url)) {
+    label.textContent = "Cannot assign to this page.";
+    groupNameLabel.textContent = currentGroup.name;
+    return;
+  }
+
+
   let key = `page:${domainName}`;
   let assignedToGroup = await browser.storage.local.get(key);
   if(assignedToGroup.hasOwnProperty(key)) {
@@ -64,9 +77,9 @@ async function updateTabDisplay() {
   }
 
   let text = `Always open ${domainName} in ${currentGroup.name}`;
-  label.innerText = text;
+  label.textContent = text;
   label.title = text;
-  groupNameLabel.innerText = currentGroup.name;
+  groupNameLabel.textContent = currentGroup.name;
   checkbox.removeAttribute("disabled");
 }
 
