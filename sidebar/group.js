@@ -666,6 +666,7 @@ class Group {
      * Add Tab
      * ---
      * Reload All Tabs
+     * Close All Tabs
      * Sort Tabs By
      * ---
      * Rename
@@ -683,6 +684,10 @@ class Group {
       {
         name: "Reload All Tabs",
         onClick: () => this.tabs.forEach((t) => t.reload())
+      },
+      {
+        name: "Close All Tabs",
+        onClick: () => this.tabs.forEach((t) => t.close())
       },
       {
         name: "Sort Tabs By",
