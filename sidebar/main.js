@@ -421,7 +421,9 @@ class GroupList {
       this._activeTab.toggleActive(false);
     }
 
+
     if(tab) {
+      let groupId = null;
       tab.toggleActive(true);
       if(tab.group !== this._activeTab.group) {
         this.clearSelectedExcept(tab.group);
@@ -429,15 +431,23 @@ class GroupList {
           this.saveStorage();
         }
         if(tab.group) {
-          this.port.postMessage({
-            method: "activeGroup",
-            windowId: this.windowId,
-            groupId: tab.group.uuid
-          });
+          groupId = tab.group.uuid;
         }
       }
+      else {
+        groupId = this._activeTab.group && this._activeTab.group.uuid;
+      }
       this._activeTab = tab;
+      if(groupId) {
+        this.port.postMessage({
+          method: "activeSync",
+          windowId: this.windowId,
+          groupId: groupId,
+          tabId: tab.id
+        });
+      }
     }
+
   }
 
   scrollToActiveTab() {
@@ -601,11 +611,21 @@ class GroupList {
       }
 
       this._dragContext.group.removeTab(this._dragContext.tab);
+      await this.port.postMessage({
+        method: "syncTabs",
+        tabIds: [this._dragContext.tab.id],
+        groupId: group.uuid
+      });
       await group.appendTabs([this._dragContext.tab], relativeTab);
     }
     else {
       this._dragContext.group.styleSelectedDragStart(false);
       let tabs = this._dragContext.group.popSelected();
+      await this.port.postMessage({
+        method: "syncTabs",
+        tabIds: tabs.map((t) => t.id),
+        groupId: group.uuid
+      });
       await group.appendTabs(tabs, relativeTab);
     }
   }

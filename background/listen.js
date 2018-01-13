@@ -1,6 +1,29 @@
-// domain names that have been temporarily been exempted
-// a mapping of tabId => Set([hostname])
-var _exemptTabs = new Map();
+class TabInfo {
+  constructor(lastAccessed, groupId) {
+    this.lastAccessed = lastAccessed;
+    this.groupId = groupId;
+
+    // set([hostname]) temporarily exempt
+    // note: we late bind the set to save memory
+    this._exempt = null;
+  }
+
+  exempt(domainName) {
+    if(this._exempt === null) {
+      this._exempt = new Set([domainName]);
+    }
+    else {
+      this._exempt.add(domainName);
+    }
+  }
+
+  isExempt(domainName) {
+    return this._exempt && this._exempt.has(domainName);
+  }
+}
+
+// tabId -> tabInfo 
+var _tabInfo = new Map();
 
 // windowId -> port
 var _ports = new Map();
@@ -19,20 +42,6 @@ function encodeURL(url) {
   });
 }
 
-function exemptTab(tabId, domainName) {
-  if(!_exemptTabs.has(tabId)) {
-    _exemptTabs[tabId] = new Set([domainName]);
-  }
-  else {
-    _exemptTabs[tabId].add(domainName);
-  }
-}
-
-function isExempt(tabId, domainName) {
-  let set = _exemptTabs[tabId];
-  return set && set.has(domainName);
-}
-
 async function onBeforeRequest(options) {
   if(options.frameId !== 0 || options.tabId === -1) {
     return {};
@@ -46,7 +55,9 @@ async function onBeforeRequest(options) {
     browser.storage.local.get(key)
   ]);
 
-  if(isExempt(tab.id, domainName)) {
+  let tabInfo = _tabInfo.get(tab.id);
+
+  if(tabInfo && tabInfo.isExempt(domainName)) {
     return {};
   }
 
@@ -113,8 +124,21 @@ function onPortMessage(message) {
   if(message.method == "invalidateExempt") {
     _exemptTabs.delete(message.tabId);
   }
-  else if(message.method == "activeGroup") {
+  else if(message.method == "activeSync") {
+    console.log('activeSync', message);
+    let tabInfo = _tabInfo.get(message.tabId);
+    if(tabInfo) {
+      tabInfo.groupId = message.groupId;
+    }
     browser.sessions.setWindowValue(message.windowId, "active-group-id", message.groupId);
+  }
+  else if(message.method == "syncTabs") {
+    for(let tabId of message.tabIds) {
+      let obj = _tabInfo.get(tabId);
+      if(obj) {
+        obj.groupId = message.groupId;
+      }
+    }
   }
 }
 
@@ -131,7 +155,10 @@ function onMessage(message) {
   else if(message.method == "redirectTab") {
     if(message.exempt) {
       let domainName = new URL(message.redirectUrl).hostname;
-      exemptTab(message.tabId, domainName);
+      let tabInfo = _tabInfo.get(message.tabId);
+      if(tabInfo) {
+        tabInfo.exempt(domainName);
+      }
     }
 
     if(message.hasOwnProperty("groupId")) {
@@ -192,6 +219,7 @@ async function prepare() {
       if(tab.active) {
         await browser.sessions.setWindowValue(tab.windowId, "active-group-id", groupId);
       }
+      _tabInfo.set(tab.id, new TabInfo(tab.lastAccessed, groupId));
     }
   }
 }
@@ -199,6 +227,7 @@ async function prepare() {
 async function onTabCreated(tabInfo) {
   let groupId = await browser.sessions.getWindowValue(tabInfo.windowId, "active-group-id");
   await browser.sessions.setTabValue(tabInfo.id, "group-id", groupId);
+  _tabInfo.set(tabInfo.id, new TabInfo(tabInfo.lastAccessed, groupId));
 }
 
 async function onTabActive(activeInfo) {
@@ -207,6 +236,19 @@ async function onTabActive(activeInfo) {
   if(groupId !== activeGroupId) {
     await browser.sessions.setWindowValue(activeInfo.windowId, "active-group-id", groupId);
   }
+
+  let tabInfo = _tabInfo.get(activeInfo.tabId);
+  if(tabInfo) {
+    tabInfo.lastAccessed = new Date().getTime();
+    tabInfo.groupId = groupId;
+  }
+  else {
+    _tabInfo.set(activeInfo.tabId, new TabInfo(new Date().getTime(), groupId));
+  }
+}
+
+function onTabRemoved(tabId, removeInfo) {
+  _tabInfo.delete(tabId);
 }
 
 function onWindowRemoved(windowId) {
@@ -224,6 +266,7 @@ prepare();
 browser.runtime.onConnect.addListener(portConnected);
 browser.runtime.onMessage.addListener(onMessage);
 browser.tabs.onCreated.addListener(onTabCreated);
+browser.tabs.onRemoved.addListener(onTabRemoved);
 browser.tabs.onActivated.addListener(onTabActive);
 browser.windows.onRemoved.addListener(onWindowRemoved);
 browser.browserAction.onClicked.addListener(onClicked);
