@@ -3,6 +3,7 @@ class TabEntry {
     this.id = tabInfo.id;
     this.title = tabInfo.title;
     this.favIconUrl = tabInfo.favIconUrl;
+    this.lastAccessed = tabInfo.lastAccessed;
     this.url = tabInfo.url;
     this.pinned = tabInfo.pinned;
     this.mutedInfo = tabInfo.mutedInfo;
@@ -265,6 +266,10 @@ class TabEntry {
 
   toggleActive(value) {
     this.active = value;
+    if(value) {
+      this.lastAccessed = new Date().getTime();
+    }
+
     if(this.group) {
       this.group.toggleActive(this, value);
     }
