@@ -48,7 +48,7 @@ html, body {
 }
 
 #search-icon {
-  background-image: url("../icons/search.svg");
+  background-image: url("/icons/search.svg");
   background-repeat: no-repeat;
   background-size: 16px;
   width: 16px;
@@ -62,7 +62,7 @@ html, body {
 }
 
 #cancel-search-icon {
-  background-image: url("../icons/close.svg");
+  background-image: url("/icons/close.svg");
   background-repeat: no-repeat;
   background-size: 16px;
   width: 16px;

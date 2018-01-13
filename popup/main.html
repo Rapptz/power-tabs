@@ -13,7 +13,19 @@
       <label for="always-open" id="always-open-label"></label>
     </div>
   </div>
-
+  <div id="controls">
+    <div id="search-container">
+      <div id="search-icon"></div>
+      <input type="search" id="search" placeholder="Search tabs" autocomplete="off" autofocus>
+      <div id="cancel-search-icon" class="hidden"></div>
+    </div>
+    <button type="button" class="control" id="new-group-button" title="New Group"></button>
+    <button type="button" class="control" id="settings-button" title="Settings"></button>
+  </div>
+  <div id="group-container">
+  </div>
+  <script src="/utils/uuid4.js"></script>
+  <script src="/utils/fuzzy.js"></script>
   <script src="main.js"></script>
 </body>
 </html>
