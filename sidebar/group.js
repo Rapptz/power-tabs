@@ -701,6 +701,10 @@ class Group {
             onClick: (e) => this.sortByKey((t) => t.title)
           },
           {
+            name: "Access",
+            onClick: (e) => this.sortByKey((t) => t.lastAccessed)
+          },
+          {
             name: "Shuffle",
             onClick: (e) => this.sortByKey((t) => Math.floor(Math.random() * this.tabs.length * 100))
           }
