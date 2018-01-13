@@ -230,6 +230,17 @@ async function onTabCreated(tabInfo) {
   _tabInfo.set(tabInfo.id, new TabInfo(tabInfo.lastAccessed, groupId));
 }
 
+function _upsertTab(tabId, groupId) {
+  let tabInfo = _tabInfo.get(tabId);
+  if(tabInfo) {
+    tabInfo.lastAccessed = new Date().getTime();
+    tabInfo.groupId = groupId;
+  }
+  else {
+    _tabInfo.set(tabId, new TabInfo(new Date().getTime(), groupId));
+  }
+}
+
 async function onTabActive(activeInfo) {
   let groupId = await browser.sessions.getTabValue(activeInfo.tabId, "group-id");
   let activeGroupId = await browser.sessions.getWindowValue(activeInfo.windowId, "active-group-id");
@@ -237,18 +248,17 @@ async function onTabActive(activeInfo) {
     await browser.sessions.setWindowValue(activeInfo.windowId, "active-group-id", groupId);
   }
 
-  let tabInfo = _tabInfo.get(activeInfo.tabId);
-  if(tabInfo) {
-    tabInfo.lastAccessed = new Date().getTime();
-    tabInfo.groupId = groupId;
-  }
-  else {
-    _tabInfo.set(activeInfo.tabId, new TabInfo(new Date().getTime(), groupId));
-  }
+  _upsertTab(activeInfo.tabId, groupId);
 }
 
 function onTabRemoved(tabId, removeInfo) {
   _tabInfo.delete(tabId);
+}
+
+async function onTabAttach(tabId, attachInfo) {
+  let activeGroupId = await browser.sessions.getWindowValue(attachInfo.newWindowId, "active-group-id");
+  await browser.sessions.setTabValue(tabId, "group-id", activeGroupId);
+  _upsertTab(tabId, groupId);
 }
 
 function onWindowRemoved(windowId) {
@@ -267,6 +277,7 @@ browser.runtime.onConnect.addListener(portConnected);
 browser.runtime.onMessage.addListener(onMessage);
 browser.tabs.onCreated.addListener(onTabCreated);
 browser.tabs.onRemoved.addListener(onTabRemoved);
+browser.tabs.onAttached.addListener(onTabAttach);
 browser.tabs.onActivated.addListener(onTabActive);
 browser.windows.onRemoved.addListener(onWindowRemoved);
 browser.browserAction.onClicked.addListener(onClicked);

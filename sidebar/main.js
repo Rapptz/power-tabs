@@ -530,12 +530,12 @@ class GroupList {
     this._tabCache.set(tabInfo.id, entry);
     let group = this.activeGroup;
 
-    if(entry.active) {
-      this.setActive(entry);
-    }
-
     if(group) {
       group.attachTab(entry, attachInfo.newPosition);
+    }
+
+    if(entry.active) {
+      this.setActive(entry);
     }
   }
 
