@@ -2,6 +2,7 @@ body {
   width: 310px;
   height: 90%;
   margin: 16px;
+  overflow-x: hidden;
 }
 
 #controls {
