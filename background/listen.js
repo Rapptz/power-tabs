@@ -107,6 +107,10 @@ function redirectTab(message) {
     url: message.redirectUrl
   }).then((tab) => {
     browser.history.deleteUrl({url: message.originalUrl });
+    onTabActive({
+      tabId: tab.id,
+      windowId: tab.windowId
+    });
   });
 }
 
