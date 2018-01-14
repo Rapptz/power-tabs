@@ -110,14 +110,7 @@ body {
 
 .group-name {
   padding: 4px;
-  border: 1px solid rgba(12, 12, 13, .3);
-  background-color: rgba(12, 12, 13, .1);
-  color: rgba(12, 12, 13, 1);
   margin-bottom: 4px;
-}
-
-.group-name:hover {
-  background-color: rgba(12, 12, 13, .2);
 }
 
 .group-tab-count {

@@ -78,6 +78,7 @@ class Group {
     this.name = data.name;
     this.open = data.open;
     this.active = data.active;
+    this.colour = data.colour || '#000000';
     this.tabs = [];
   }
 
@@ -90,7 +91,8 @@ class Group {
       name: this.name,
       uuid: this.uuid,
       open: this.open,
-      active: this.active
+      active: this.active,
+      colour: this.colour
     };
   }
 
@@ -145,6 +147,15 @@ class Group {
     let groupName = document.createElement("div");
     groupName.className = "group-name";
     groupName.textContent = this.name;
+
+    setDefaultGroupColour(groupName, this.colour);
+    groupName.addEventListener("mouseenter", (e) => {
+      setHoverGroupColour(groupName, this.colour);
+    });
+
+    groupName.addEventListener("mouseleave", (e) => {
+      setDefaultGroupColour(groupName, this.colour);
+    });
 
     let tabCount = document.createElement("span");
     tabCount.className = "group-tab-count";
@@ -235,7 +246,8 @@ document.getElementById("new-group-button").addEventListener("click", async (e) 
     name: "untitled",
     uuid: null,
     open: false,
-    active: false
+    active: false,
+    colour: null
   });
 
   cache.set(newGroup.uuid, newGroup);

@@ -7,12 +7,14 @@ class Group {
       this.uuid = args.uuid;
       this.open = args.open;
       this.active = args.active;
+      this.colour = args.hasOwnProperty('colour') ? args.colour : '#000000';
     }
     else {
       this.name = args;
       this.uuid = uuid4();
       this.open = true;
       this.active = false;
+      this.colour = '#000000';
     }
 
     this.parent = null;
@@ -66,9 +68,19 @@ class Group {
 
     details.addEventListener("click", (e) => this.onClick(e));
 
+
     let summary = document.createElement("summary");
     summary.className = "tab-group-container";
     this._summaryView = summary;
+
+    setDefaultGroupColour(summary, this.colour);
+    summary.addEventListener("mouseenter", (e) => {
+      setHoverGroupColour(this._summaryView, this.colour);
+    });
+
+    summary.addEventListener("mouseleave", (e) => {
+      setDefaultGroupColour(this._summaryView, this.colour);
+    });
 
     let summaryIcon = document.createElement("div");
     summaryIcon.className = "summary-icon";
@@ -645,7 +657,8 @@ class Group {
       name: this.name,
       uuid: this.uuid,
       open: this.open,
-      active: this.active
+      active: this.active,
+      colour: this.colour
     };
   }
 

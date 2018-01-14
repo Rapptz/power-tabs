@@ -56,6 +56,15 @@ class GroupSetting {
       }
     });
 
+    let colourEdit = templ.getElementById("groupColour");
+    colourEdit.id = "";
+    colourEdit.value = this.data.hasOwnProperty("colour") ? this.data.colour : '#000000';
+
+    colourEdit.addEventListener("change", (e) => {
+      this.data.colour = colourEdit.value;
+      this.save();
+    });
+
     let assignedDomains = templ.getElementById("assignedDomains");
     assignedDomains.id = "";
     this._assignedDomains = assignedDomains;
