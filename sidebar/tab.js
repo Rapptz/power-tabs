@@ -48,6 +48,9 @@ class TabEntry {
     let icon = document.createElement("div");
     icon.className = "tab-icon";
     this._iconView = icon;
+    icon.addEventListener("error", (e) => {
+      icon.style.backgroundImage = 'url("/icons/favicon.svg")';
+    });
     this.updateIcon(this.favIconUrl);
 
     let titleView = document.createElement("span");
@@ -350,7 +353,11 @@ class TabEntry {
   }
 
   updateIcon(icon) {
-    let url = icon || "../icons/favicon.svg";
+    let url = icon || "/icons/favicon.svg";
+    if(url.indexOf("chrome://") === 0) {
+      url = "/icons/favicon.svg";
+    }
+
     this._iconView.style.backgroundImage = `url("${url}")`;
   }
 }

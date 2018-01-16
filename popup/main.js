@@ -26,6 +26,10 @@ function createIcon(favIconUrl) {
   let icon = document.createElement("div");
   icon.className = "tab-icon";
   let iconURL = favIconUrl || "/icons/favicon.svg";
+  if(iconURL.indexOf("chrome://") === 0) {
+    iconURL = "/icons/favicon.svg";
+  }
+
   icon.style.backgroundImage = `url("${iconURL}")`;
 
   icon.addEventListener("error", () => {
