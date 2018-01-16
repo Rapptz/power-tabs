@@ -2,6 +2,7 @@ const originalUrl = new URL(window.location);
 const search = originalUrl.searchParams;
 const redirectUrl = decodeURIComponent(search.get("url"));
 const tabId = parseInt(search.get("tabId"));
+const windowId = parseInt(search.get("windowId"));
 var assignedGroup = null;
 
 async function loadData() {
@@ -63,6 +64,7 @@ function confirm() {
   browser.runtime.sendMessage({
     method: "redirectTab",
     tabId: tabId,
+    windowId: windowId,
     redirectUrl: redirectUrl,
     originalUrl: originalUrl.href,
     exempt: false,
@@ -74,6 +76,7 @@ function deny() {
   browser.runtime.sendMessage({
     method: "redirectTab",
     tabId: tabId,
+    windowId: windowId,
     redirectUrl: redirectUrl,
     originalUrl: originalUrl.href,
     exempt: true

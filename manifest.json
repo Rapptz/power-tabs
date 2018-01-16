@@ -37,7 +37,7 @@
     },
 
     "background": {
-        "scripts": ["background/listen.js"]
+        "page": "background/listen.html"
     },
 
     "options_ui": {

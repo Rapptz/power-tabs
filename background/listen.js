@@ -28,6 +28,7 @@ var _tabInfo = new Map();
 // windowId -> port
 var _ports = new Map();
 var _openSidebarOnClick = false;
+var _groups = [];
 
 function postMessage(msg) {
   for(let port of _ports.values()) {
@@ -39,6 +40,29 @@ function encodeURL(url) {
   return encodeURIComponent(url).replace(/[!'()*]/g, (c) => {
     const charCode = c.charCodeAt(0).toString(16);
     return `%${charCode}`;
+  });
+}
+
+async function setActiveGroupIcon(tabId, groupId) {
+  let group = _groups.find((g) => g.uuid == groupId);
+  if(!group) {
+    return;
+  }
+
+  await browser.browserAction.setBadgeBackgroundColor({
+    tabId: tabId,
+    color: group.colour + '80' // 50% opacity
+  });
+
+  let text = String.fromCodePoint(group.name.codePointAt(0));
+  await browser.browserAction.setBadgeText({
+    tabId: tabId,
+    text: text
+  });
+
+  await browser.browserAction.setTitle({
+    title: `Active Group: ${group.name}`,
+    tabId: tabId
   });
 }
 
@@ -79,7 +103,7 @@ async function onBeforeRequest(options) {
 
   if(groupId !== settings.group) {
     const extURL = browser.extension.getURL("/background/confirm.html");
-    let url = `${extURL}?url=${encodeURL(options.url)}&groupId=${settings.group}&tabId=${tab.id}`
+    let url = `${extURL}?url=${encodeURL(options.url)}&groupId=${settings.group}&tabId=${tab.id}&windowId=${tab.windowId}`
     return {
       redirectUrl: url
     };
@@ -101,27 +125,30 @@ async function toggleNeverAsk(domainName, value) {
   await browser.storage.local.set(settings);
 }
 
-function redirectTab(message) {
-  browser.tabs.update(message.tabId, {
+async function redirectTab(message) {
+  let tab = await browser.tabs.update(message.tabId, {
     loadReplace: true,
     url: message.redirectUrl
-  }).then((tab) => {
-    browser.history.deleteUrl({url: message.originalUrl });
-    onTabActive({
-      tabId: tab.id,
-      windowId: tab.windowId
-    });
   });
+  await browser.history.deleteUrl({ url: message.originalUrl });
 }
 
-function moveTabToGroup(message) {
-  browser.sessions.setTabValue(message.tabId, "group-id", message.groupId);
-  redirectTab(message);
+async function moveTabToGroup(message) {
+  await browser.sessions.setTabValue(message.tabId, "group-id", message.groupId);
+  await browser.sessions.setWindowValue(message.windowId, "active-group-id", message.groupId);
+  await redirectTab(message);
+
+  let groupInfo = _tabInfo.get(message.tabId);
+  if(groupInfo) {
+    groupInfo.groupId = message.groupId;
+  }
+
   postMessage({
     method: "moveTabGroup",
     tabId: message.tabId,
     groupId: message.groupId
   });
+  await setActiveGroupIcon(message.tabId, message.groupId);
 }
 
 function onPortMessage(message) {
@@ -129,12 +156,12 @@ function onPortMessage(message) {
     _exemptTabs.delete(message.tabId);
   }
   else if(message.method == "activeSync") {
-    console.log('activeSync', message);
     let tabInfo = _tabInfo.get(message.tabId);
     if(tabInfo) {
       tabInfo.groupId = message.groupId;
     }
     browser.sessions.setWindowValue(message.windowId, "active-group-id", message.groupId);
+    setActiveGroupIcon(message.tabId, message.groupId);
   }
   else if(message.method == "syncTabs") {
     for(let tabId of message.tabIds) {
@@ -142,6 +169,7 @@ function onPortMessage(message) {
       if(obj) {
         obj.groupId = message.groupId;
       }
+      setActiveGroupIcon(tabId, message.groupId);
     }
   }
 }
@@ -188,6 +216,11 @@ function onClicked(tab) {
 }
 
 async function ensureDefaultSettings() {
+  let groups = await browser.storage.local.get("groups");
+  if(groups.hasOwnProperty("groups")) {
+    _groups = groups.groups;
+  }
+
   const settings = {
     reverseTabDisplay: false,
     openSidebarOnClick: false
@@ -222,6 +255,7 @@ async function prepare() {
     if(groupId) {
       if(tab.active) {
         await browser.sessions.setWindowValue(tab.windowId, "active-group-id", groupId);
+        await setActiveGroupIcon(tab.id, groupId);
       }
       _tabInfo.set(tab.id, new TabInfo(tab.lastAccessed, groupId));
     }
@@ -232,6 +266,7 @@ async function onTabCreated(tabInfo) {
   let groupId = await browser.sessions.getWindowValue(tabInfo.windowId, "active-group-id");
   await browser.sessions.setTabValue(tabInfo.id, "group-id", groupId);
   _tabInfo.set(tabInfo.id, new TabInfo(tabInfo.lastAccessed, groupId));
+  await setActiveGroupIcon(tabInfo.id, groupId);
 }
 
 function _upsertTab(tabId, groupId) {
@@ -252,6 +287,7 @@ async function onTabActive(activeInfo) {
     await browser.sessions.setWindowValue(activeInfo.windowId, "active-group-id", groupId);
   }
 
+  await setActiveGroupIcon(activeInfo.tabId, groupId);
   _upsertTab(activeInfo.tabId, groupId);
 }
 
@@ -263,6 +299,18 @@ async function onTabAttach(tabId, attachInfo) {
   let activeGroupId = await browser.sessions.getWindowValue(attachInfo.newWindowId, "active-group-id");
   await browser.sessions.setTabValue(tabId, "group-id", activeGroupId);
   _upsertTab(tabId, groupId);
+  await setActiveGroupIcon(tabId, activeGroupId);
+}
+
+function onTabUpdate(tabId, changeInfo, tabInfo) {
+  // https://bugzilla.mozilla.org/show_bug.cgi?id=1430620
+  if(tabInfo.active) {
+    let groupInfo = _tabInfo.get(tabId);
+    if(groupInfo) {
+      let groupId = groupInfo.groupId;
+      setActiveGroupIcon(tabId, groupId);
+    }
+  }
 }
 
 function onWindowRemoved(windowId) {
@@ -272,6 +320,13 @@ function onWindowRemoved(windowId) {
 function onSettingChange(changes, area) {
   if(changes.hasOwnProperty("openSidebarOnClick")) {
     _openSidebarOnClick = changes.openSidebarOnClick.newValue;
+  }
+
+  if(changes.hasOwnProperty("groups")) {
+    _groups = changes.groups.newValue;
+    browser.tabs.query({active: true}).then((tabs) => {
+      tabs.forEach((t) => setActiveGroupIcon(t.id, _tabInfo.get(t.id).groupId))
+    });
   }
 }
 
@@ -283,6 +338,7 @@ browser.tabs.onCreated.addListener(onTabCreated);
 browser.tabs.onRemoved.addListener(onTabRemoved);
 browser.tabs.onAttached.addListener(onTabAttach);
 browser.tabs.onActivated.addListener(onTabActive);
+browser.tabs.onUpdated.addListener(onTabUpdate);
 browser.windows.onRemoved.addListener(onWindowRemoved);
 browser.browserAction.onClicked.addListener(onClicked);
 browser.storage.onChanged.addListener(onSettingChange);
