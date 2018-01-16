@@ -11,6 +11,17 @@ var NEW_TAB_PAGES = new Set([
     "about:blank"
 ]);
 
+// workaround for https://bugzilla.mozilla.org/show_bug.cgi?id=1324255
+function stealFocus(e) {
+  if(e.target === document) {
+    searchBar.focus();
+  }
+  document.removeEventListener("focus", stealFocus);
+}
+
+document.addEventListener("focus", stealFocus);
+// end workaround
+
 function createIcon(favIconUrl) {
   let icon = document.createElement("div");
   icon.className = "tab-icon";
