@@ -46,6 +46,7 @@ html, body {
   align-items: center;
   -moz-appearance: textfield;
   width: 90%;
+  margin: 0 2px;
 }
 
 #search-icon {
