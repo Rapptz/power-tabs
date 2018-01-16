@@ -31,6 +31,7 @@
 }
 
 html, body {
+  font-family: Roboto, Noto, "San Francisco", Ubuntu, "Segoe UI", "Fira Sans", message-box, Arial, sans-serif;
   background-color: var(--body-background);
   height: 100%;
 }
@@ -206,6 +207,7 @@ html, body {
 .tab-group-name {
   flex: 20 0;
   height: 24px;
+  font-size: 15px;
 }
 
 .tab-group-button {
