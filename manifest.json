@@ -28,6 +28,12 @@
                 "default": "Ctrl+Shift+Comma"
             },
             "description": "Opens the Power Tab menu."
+        },
+        "_execute_browser_action": {
+            "suggested_key": {
+                "default": "Ctrl+Shift+L"
+            },
+            "description": "Opens the Quick Group Switcher"
         }
     },
 
