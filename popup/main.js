@@ -2,6 +2,8 @@ let cache = new Map();
 var currentTab = null;
 var currentGroup = null;
 var searchBar = document.getElementById("search");
+var _selectedElement = searchBar;
+var _lastSearch = "";
 var cancelSearch = document.getElementById("cancel-search-icon");
 var groupContainer = document.getElementById("group-container");
 var NEW_TAB_PAGES = new Set([
@@ -47,6 +49,7 @@ class Tab {
     tab.classList.add("hidden");
 
     this.view = tab;
+    tab.setAttribute("data-selectable", 1);
 
     let icon = createIcon(data.hasOwnProperty('favIconUrl') ? data.favIconUrl : null);
     let name = document.createElement("div");
@@ -155,13 +158,25 @@ class Group {
     }
   }
 
+  toggleHover(value) {
+    if(value) {
+      setHoverGroupColour(this._groupName, this.colour);
+    }
+    else {
+      setDefaultGroupColour(this._groupName, this.colour);
+    }
+  }
+
   buildView() {
     this.view = document.createElement("div");
     this.view.className = "group";
+    this.view.setAttribute("data-selectable", 1);
+    this.view.setAttribute("data-group-id", this.uuid);
 
     let groupName = document.createElement("div");
     groupName.className = "group-name";
     groupName.textContent = this.name;
+    this._groupName = groupName;
 
     setDefaultGroupColour(groupName, this.colour);
     groupName.addEventListener("mouseenter", (e) => {
@@ -202,6 +217,11 @@ class Group {
 };
 
 searchBar.addEventListener("keyup", (e) => {
+  if(searchBar.value !== _lastSearch) {
+    swapSelectedWith(searchBar);
+  }
+
+  _lastSearch = searchBar.value;
   cancelSearch.classList.toggle("hidden", searchBar.value.length == 0);
   for(let g of cache.values()) {
     g.hideAll();
@@ -355,3 +375,50 @@ async function setDomainAssignment(add) {
 }
 
 prepare();
+
+function swapSelectedWith(node) {
+  // remove the hover colour from the active group
+  if(_selectedElement.hasAttribute("data-group-id")) {
+    let group = cache.get(_selectedElement.getAttribute("data-group-id"));
+    group.toggleHover(false);
+  }
+
+
+  // add the hover colour to the new active group (if applicable)
+  if(node.hasAttribute("data-group-id")) {
+    let group = cache.get(node.getAttribute("data-group-id"));
+    group.toggleHover(true);
+  }
+
+  _selectedElement.classList.remove("selected");
+  node.classList.add("selected");
+  _selectedElement = node;
+}
+
+// allow group and tab browsing with arrow keys and enter
+document.addEventListener("keydown", (e) => {
+   if(e.key !== "ArrowUp" && e.key !== "ArrowDown" && e.key !== "Enter") {
+    return;
+  }
+
+  if(e.key == "Enter" && _selectedElement !== searchBar) {
+    // simulate a click and propagate to the proper onclick handler
+    _selectedElement.click();
+    swapSelectedWith(searchBar);
+    return;
+  }
+
+  let up = e.key == "ArrowUp";
+  if(e.target.hasAttribute("data-selectable")){
+    let elements = [...document.querySelectorAll("[data-selectable]:not(.hidden)")];
+    let index = elements.indexOf(_selectedElement);
+    let newElement = elements[index + (up ? -1 : +1)];
+    if(newElement !== undefined) {
+      swapSelectedWith(newElement);
+    }
+  }
+});
+
+document.addEventListener("click", (e) => {
+  swapSelectedWith(searchBar);
+});
