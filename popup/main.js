@@ -410,11 +410,16 @@ document.addEventListener("keydown", (e) => {
 
   let up = e.key == "ArrowUp";
   if(e.target.hasAttribute("data-selectable")){
+    e.preventDefault();
     let elements = [...document.querySelectorAll("[data-selectable]:not(.hidden)")];
     let index = elements.indexOf(_selectedElement);
     let newElement = elements[index + (up ? -1 : +1)];
     if(newElement !== undefined) {
       swapSelectedWith(newElement);
+      let rect = newElement.getBoundingClientRect();
+      if(rect.top < 0 || rect.top > window.innerHeight) {
+        window.scrollTo(0, rect.top + document.body.scrollTop);
+      }
     }
   }
 });
