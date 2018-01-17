@@ -128,7 +128,7 @@ class GroupList {
       lookup.set(group.uuid, group);
     }
 
-    let oldActiveGroup = this.groups.find((g) => g.active);
+    let oldActiveGroup = this.groups.find((g) => g.active) || this.groups[0];
 
     for(let tab of tabs) {
       let entry = new TabEntry(tab);
