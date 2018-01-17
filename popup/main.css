@@ -3,6 +3,9 @@ body {
   height: 90%;
   margin: 16px;
   overflow-x: hidden;
+
+  /* https://bugzilla.mozilla.org/show_bug.cgi?id=1418677 */
+  background-image: url("/icons/transparency_workaround.png");
 }
 
 #controls {
