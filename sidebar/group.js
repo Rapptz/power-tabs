@@ -391,7 +391,11 @@ class Group {
       }
     }
 
-    browser.sessions.setTabValue(tabEntry.id, "group-id", this.uuid);
+    browser.sessions.setTabValue(tabEntry.id, "group-id", this.uuid).then(() => {
+      if(this.parent) {
+        this.parent.notifyGroupChange([tabEntry], this.uuid);
+      }
+    });
   }
 
   loadTab(tabEntry) {
@@ -405,6 +409,9 @@ class Group {
       for(let entry of tabEntries) {
         this.loadTab(entry);
         await browser.sessions.setTabValue(entry.id, "group-id", this.uuid);
+      }
+      if(this.parent) {
+        this.parent.notifyGroupChange(tabEntries, this.uuid);
       }
       return;
     }
@@ -434,6 +441,7 @@ class Group {
     await browser.tabs.move(this.tabs.map((t) => t.id), {index: this.tabs[0].index});
     this.parent.endBatchMove();
     await this.parent.resync();
+    this.parent.notifyGroupChange(tabEntries, this.uuid);
   }
 
   _getCanonicalOrder(tabEntries, relativeTo) {

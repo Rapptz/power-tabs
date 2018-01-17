@@ -83,6 +83,14 @@ class GroupList {
     };
   }
 
+  notifyGroupChange(tabs, groupId) {
+    this.port.postMessage({
+      method: "syncTabs",
+      tabIds: tabs.map((t) => t.id),
+      groupId: groupId
+    });
+  }
+
   async populate() {
     let windowInfo = await browser.windows.getCurrent({populate: true});
     this.windowId = windowInfo.id;
@@ -420,7 +428,6 @@ class GroupList {
     if(this._activeTab) {
       this._activeTab.toggleActive(false);
     }
-
 
     if(tab) {
       let groupId = null;
