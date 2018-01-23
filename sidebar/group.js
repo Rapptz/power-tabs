@@ -295,6 +295,22 @@ class Group {
     }
   }
 
+  discardOutsideOfSelected() {
+    let selectedTabs = new Set(this._selected.filter((t) => t.visible).map((t) => t.id));
+    let tabIds = this.tabs.filter((t) => !selectedTabs.has(t.id) && !t.discarded).map((t) => t.id);
+    browser.tabs.discard(tabIds);
+  }
+
+  discardAllTabs() {
+    let tabIds = this.tabs.filter((t) => !t.discarded).map((t) => t.id);
+    browser.tabs.discard(tabIds);
+  }
+
+  discardSelected() {
+    let tabIds = this._selected.filter((t) => t.visible && !t.discarded).map((t) => t.id);
+    browser.tabs.discard(tabIds);
+  }
+
   applyToSelected(func) {
     this._selected.filter((t) => t.visible).forEach(func);
   }
@@ -694,6 +710,7 @@ class Group {
      * ---
      * Reload All Tabs
      * Close All Tabs
+     * Discard All Tabs
      * Sort Tabs By
      * ---
      * Rename
@@ -715,6 +732,11 @@ class Group {
       {
         name: "Close All Tabs",
         onClick: () => this.tabs.forEach((t) => t.close())
+      },
+      {
+        name: "Discard All Tabs",
+        onClick: () => this.discardAllTabs(),
+        isEnabled: () => browser.tabs.hasOwnProperty("discard")
       },
       {
         name: "Sort Tabs By",
@@ -760,8 +782,10 @@ class Group {
      * Move Tabs To
      * ---
      * Reload Tabs
+     * Discard Other Tabs
      * Close Other Tabs
      * ---
+     * Discard Tabs
      * Close Tabs
      */
 
@@ -790,10 +814,20 @@ class Group {
         onClick: (e) => this.applyToSelected((t) => t.reload())
       },
       {
+        name: "Discard Other Tabs",
+        onClick: () => this.discardOutsideOfSelected(),
+        isEnabled: () => browser.tabs.hasOwnProperty("discard")
+      },
+      {
         name: "Close Other Tabs",
         onClick: (e) => this.closeOutsideOfSelected()
       },
       { name: "separator" },
+      {
+        name: "Discard Tabs",
+        onClick: () => this.discardSelected(),
+        isEnabled: () => browser.tabs.hasOwnProperty("discard")
+      },
       {
         name: "Close Tabs",
         onClick: (e) => this.applyToSelected((t) => t.close())

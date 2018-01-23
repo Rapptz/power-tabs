@@ -203,6 +203,12 @@ class TabEntry {
     });
 
     items.push({
+      name: "Discard Tab",
+      onClick: () => browser.tabs.discard(this.id),
+      isEnabled: () => !this.active && browser.tabs.hasOwnProperty("discard")
+    });
+
+    items.push({
       name: "Close Tab",
       onClick: (e) => this.close()
     });
