@@ -140,6 +140,15 @@ function loadRegularSettings(data) {
     saveSettings("openSidebarOnClick", openSidebarOnClick.checked);
   });
 
+  let discardOnGroupChange = document.getElementById("discardOnGroupChange");
+  discardOnGroupChange.checked = data.discardOnGroupChange;
+  discardOnGroupChange.addEventListener("click", (e) => {
+    saveSettings("discardOnGroupChange", discardOnGroupChange.checked);
+  });
+
+  if(!browser.tabs.hasOwnProperty("discard")) {
+    discardOnGroupChange.setAttribute("disabled", 1);
+  }
 }
 
 async function loadSettings() {

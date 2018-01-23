@@ -1,7 +1,9 @@
 class TabInfo {
-  constructor(lastAccessed, groupId) {
+  constructor(lastAccessed, groupId, windowId, discarded) {
     this.lastAccessed = lastAccessed;
     this.groupId = groupId;
+    this.windowId = windowId;
+    this.discarded = discarded || false;
 
     // set([hostname]) temporarily exempt
     // note: we late bind the set to save memory
@@ -24,15 +26,44 @@ class TabInfo {
 
 // tabId -> tabInfo 
 var _tabInfo = new Map();
+var _groupSwitchTimeout = null;
 
 // windowId -> port
 var _ports = new Map();
 var _openSidebarOnClick = false;
 var _groups = [];
+var _discardOnGroupChange = false;
+
+function onGroupSwitch(windowId, beforeGroupId, afterGroupId) {
+  // console.log(`${beforeGroupId} -> ${afterGroupId}`);
+  if(_discardOnGroupChange && browser.tabs.hasOwnProperty("discard")) {
+    let tabIds = [];
+    for(let [key, value] of _tabInfo.entries()) {
+      if(!value.discarded && value.windowId === windowId && value.groupId !== afterGroupId) {
+        tabIds.push(key);
+      }
+    }
+    browser.tabs.discard(tabIds);
+  }
+}
 
 function postMessage(msg) {
   for(let port of _ports.values()) {
     port.postMessage(msg);
+  }
+}
+
+function dispatchGroupSwitch(windowId, beforeGroupId, afterGroupId) {
+  if(_groupSwitchTimeout !== null) {
+    clearTimeout(_groupSwitchTimeout);
+    _groupSwitchTimeout = null;
+  }
+
+  if(beforeGroupId != afterGroupId) {
+    _groupSwitchTimeout = setTimeout(() => {
+      onGroupSwitch(windowId, beforeGroupId, afterGroupId);
+      _groupSwitchTimeout = null;
+    }, 50);
   }
 }
 
@@ -134,6 +165,8 @@ async function redirectTab(message) {
 }
 
 async function moveTabToGroup(message) {
+  let oldGroupId = await browser.sessions.getTabValue(message.tabId, "group-id");
+  dispatchGroupSwitch(message.windowId, oldGroupId, message.groupId);
   await browser.sessions.setTabValue(message.tabId, "group-id", message.groupId);
   await browser.sessions.setWindowValue(message.windowId, "active-group-id", message.groupId);
   await redirectTab(message);
@@ -152,6 +185,7 @@ async function moveTabToGroup(message) {
 }
 
 function onPortMessage(message) {
+  console.log(message.method);
   if(message.method == "invalidateExempt") {
     _exemptTabs.delete(message.tabId);
   }
@@ -160,7 +194,11 @@ function onPortMessage(message) {
     if(tabInfo) {
       tabInfo.groupId = message.groupId;
     }
-    browser.sessions.setWindowValue(message.windowId, "active-group-id", message.groupId);
+
+    browser.sessions.getWindowValue(message.windowId, "active-group-id").then((groupId) => {
+      browser.sessions.setWindowValue(message.windowId, "active-group-id", message.groupId);
+      dispatchGroupSwitch(message.windowId, groupId, message.groupId);
+    });
     setActiveGroupIcon(message.tabId, message.groupId);
   }
   else if(message.method == "syncTabs") {
@@ -171,7 +209,13 @@ function onPortMessage(message) {
       }
       setActiveGroupIcon(tabId, message.groupId);
     }
-    browser.sessions.setWindowValue(message.windowId, "active-group-id", message.groupId);
+
+    if(message.active) {
+      browser.sessions.getWindowValue(message.windowId, "active-group-id").then((groupId) => {
+        browser.sessions.setWindowValue(message.windowId, "active-group-id", message.groupId);
+        dispatchGroupSwitch(message.windowId, groupId, message.groupId);
+      });
+    }
   }
 }
 
@@ -224,7 +268,8 @@ async function ensureDefaultSettings() {
 
   const settings = {
     reverseTabDisplay: false,
-    openSidebarOnClick: false
+    openSidebarOnClick: false,
+    discardOnGroupChange: false
   };
 
   let keys = Object.keys(settings);
@@ -246,6 +291,7 @@ async function ensureDefaultSettings() {
   }
 
   _openSidebarOnClick = before.openSidebarOnClick;
+  _discardOnGroupChange = before.discardOnGroupChange;
   await browser.storage.local.set(before);
 }
 
@@ -258,7 +304,7 @@ async function prepare() {
         await browser.sessions.setWindowValue(tab.windowId, "active-group-id", groupId);
         await setActiveGroupIcon(tab.id, groupId);
       }
-      _tabInfo.set(tab.id, new TabInfo(tab.lastAccessed, groupId));
+      _tabInfo.set(tab.id, new TabInfo(tab.lastAccessed, groupId, tab.windowId, tab.discarded));
     }
   }
 }
@@ -270,14 +316,15 @@ async function onTabCreated(tabInfo) {
   await setActiveGroupIcon(tabInfo.id, groupId);
 }
 
-function _upsertTab(tabId, groupId) {
+function _upsertTab(tabId, groupId, windowId) {
   let tabInfo = _tabInfo.get(tabId);
   if(tabInfo) {
     tabInfo.lastAccessed = new Date().getTime();
     tabInfo.groupId = groupId;
+    tabInfo.windowId = windowId;
   }
   else {
-    _tabInfo.set(tabId, new TabInfo(new Date().getTime(), groupId));
+    _tabInfo.set(tabId, new TabInfo(new Date().getTime(), groupId, windowId));
   }
 }
 
@@ -286,10 +333,11 @@ async function onTabActive(activeInfo) {
   let activeGroupId = await browser.sessions.getWindowValue(activeInfo.windowId, "active-group-id");
   if(groupId !== activeGroupId) {
     await browser.sessions.setWindowValue(activeInfo.windowId, "active-group-id", groupId);
+    dispatchGroupSwitch(activeInfo.windowId, activeGroupId, groupId);
   }
 
   await setActiveGroupIcon(activeInfo.tabId, groupId);
-  _upsertTab(activeInfo.tabId, groupId);
+  _upsertTab(activeInfo.tabId, groupId, activeInfo.windowId);
 }
 
 function onTabRemoved(tabId, removeInfo) {
@@ -299,7 +347,7 @@ function onTabRemoved(tabId, removeInfo) {
 async function onTabAttach(tabId, attachInfo) {
   let activeGroupId = await browser.sessions.getWindowValue(attachInfo.newWindowId, "active-group-id");
   await browser.sessions.setTabValue(tabId, "group-id", activeGroupId);
-  _upsertTab(tabId, groupId);
+  _upsertTab(tabId, groupId, attachInfo.newWindowId);
   await setActiveGroupIcon(tabId, activeGroupId);
 }
 
@@ -312,6 +360,13 @@ function onTabUpdate(tabId, changeInfo, tabInfo) {
       setActiveGroupIcon(tabId, groupId);
     }
   }
+
+  if(changeInfo.hasOwnProperty("discarded")) {
+    let tabInfo = _tabInfo.get(tabId);
+    if(tabInfo) {
+      tabInfo.discarded = changeInfo.discarded;
+    }
+  }
 }
 
 function onWindowRemoved(windowId) {
@@ -321,6 +376,10 @@ function onWindowRemoved(windowId) {
 function onSettingChange(changes, area) {
   if(changes.hasOwnProperty("openSidebarOnClick")) {
     _openSidebarOnClick = changes.openSidebarOnClick.newValue;
+  }
+
+  if(changes.hasOwnProperty("discardOnGroupChange")) {
+    _discardOnGroupChange = changes.discardOnGroupChange.newValue;
   }
 
   if(changes.hasOwnProperty("groups")) {

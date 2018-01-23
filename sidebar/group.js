@@ -391,10 +391,16 @@ class Group {
       }
     }
 
-    browser.sessions.setTabValue(tabEntry.id, "group-id", this.uuid).then(() => {
-      if(this.parent) {
-        this.parent.notifyGroupChange([tabEntry], this.uuid);
+    browser.sessions.getTabValue(tabEntry.id, "group-id").then((groupId) => {
+      if(groupId === this.uuid) {
+        return;
       }
+
+      browser.sessions.setTabValue(tabEntry.id, "group-id", this.uuid).then(() => {
+        if(this.parent) {
+          this.parent.notifyGroupChange([tabEntry], this.uuid);
+        }
+      });
     });
   }
 

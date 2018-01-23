@@ -84,6 +84,7 @@ class GroupList {
   }
 
   notifyGroupChange(tabs, groupId) {
+    console.trace();
     this.port.postMessage({
       method: "syncTabs",
       tabIds: tabs.map((t) => t.id),
@@ -601,10 +602,9 @@ class GroupList {
         this._dragContext.group.styleSelectedDragStart(false);
       }
     }
-    else {
+    else if(this._dragContext.group !== null) {
       this._dragContext.group.view.classList.remove("drag-target");
     }
-    this._resetDragContext();
   }
 
   async _dropTabs(e, groupIndex) {
@@ -619,24 +619,26 @@ class GroupList {
       }
 
       this._dragContext.group.removeTab(this._dragContext.tab);
+      await group.appendTabs([this._dragContext.tab], relativeTab);
       await this.port.postMessage({
         method: "syncTabs",
         tabIds: [this._dragContext.tab.id],
+        active: this._dragContext.tab.active,
         groupId: group.uuid,
         windowId: this.windowId
       });
-      await group.appendTabs([this._dragContext.tab], relativeTab);
     }
     else {
       this._dragContext.group.styleSelectedDragStart(false);
       let tabs = this._dragContext.group.popSelected();
+      await group.appendTabs(tabs, relativeTab);
       await this.port.postMessage({
         method: "syncTabs",
         tabIds: tabs.map((t) => t.id),
+        active: tabs.some((t) => t.active),
         groupId: group.uuid,
         windowId: this.windowId
       });
-      await group.appendTabs(tabs, relativeTab);
     }
   }
 
@@ -678,6 +680,8 @@ class GroupList {
       e.preventDefault();
       this.saveStorage();
     }
+
+    this._resetDragContext();
   }
 
   onStorageChange(changes, area) {
