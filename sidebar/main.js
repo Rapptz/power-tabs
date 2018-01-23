@@ -87,7 +87,8 @@ class GroupList {
     this.port.postMessage({
       method: "syncTabs",
       tabIds: tabs.map((t) => t.id),
-      groupId: groupId
+      groupId: groupId,
+      windowId: this.windowId
     });
   }
 
@@ -621,7 +622,8 @@ class GroupList {
       await this.port.postMessage({
         method: "syncTabs",
         tabIds: [this._dragContext.tab.id],
-        groupId: group.uuid
+        groupId: group.uuid,
+        windowId: this.windowId
       });
       await group.appendTabs([this._dragContext.tab], relativeTab);
     }
@@ -631,7 +633,8 @@ class GroupList {
       await this.port.postMessage({
         method: "syncTabs",
         tabIds: tabs.map((t) => t.id),
-        groupId: group.uuid
+        groupId: group.uuid,
+        windowId: this.windowId
       });
       await group.appendTabs(tabs, relativeTab);
     }

@@ -171,6 +171,7 @@ function onPortMessage(message) {
       }
       setActiveGroupIcon(tabId, message.groupId);
     }
+    browser.sessions.setWindowValue(message.windowId, "active-group-id", message.groupId);
   }
 }
 
