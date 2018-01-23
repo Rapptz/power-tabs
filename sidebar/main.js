@@ -88,7 +88,6 @@ class GroupList {
   }
 
   notifyGroupChange(tabs, groupId) {
-    console.trace();
     this.port.postMessage({
       method: "syncTabs",
       tabIds: tabs.map((t) => t.id),
