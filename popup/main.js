@@ -4,6 +4,7 @@ var currentGroup = null;
 var searchBar = document.getElementById("search");
 var _selectedElement = searchBar;
 var _lastSearch = "";
+var _windowId = null;
 var cancelSearch = document.getElementById("cancel-search-icon");
 var groupContainer = document.getElementById("group-container");
 var NEW_TAB_PAGES = new Set([
@@ -208,6 +209,19 @@ class Group {
           updateTabDisplay();
         });
       }
+      else {
+        browser.runtime.sendMessage({
+          method: "createTab",
+          windowId: _windowId,
+          groupId: this.uuid
+        }).then((response) => {
+          this.addTab(response);
+          this.setTabCount(this.tabs.length);
+          currentTab = response;
+          currentGroup = this;
+          updateTabDisplay();
+        });
+      }
     });
 
     for(let tab of this.tabs) {
@@ -303,6 +317,7 @@ async function updateTabDisplay() {
   checkbox.checked = false;
   checkbox.setAttribute("disabled", "1");
 
+  _windowId = currentTab.windowId;
   let name = document.createElement("div");
   name.textContent = currentTab.title;
   name.title = currentTab.title;

@@ -156,6 +156,33 @@ async function toggleNeverAsk(domainName, value) {
   await browser.storage.local.set(settings);
 }
 
+async function createTab(windowId, groupId, sendResponse) {
+  let oldGroupId = await browser.sessions.getWindowValue(windowId, "active-group-id");
+  let dispatch = oldGroupId !== groupId;
+  if(dispatch) {
+    await browser.sessions.setWindowValue(windowId, "active-group-id", groupId);
+  }
+
+  let port = _ports.get(windowId);
+  if(port) {
+    try {
+      await port.postMessage({
+        method: "setGroupBaton",
+        groupId: groupId,
+        windowId: windowId
+      });
+    }
+    catch(e) {}
+  }
+
+  // the onTabCreated event will handle the rest of the state switching here
+  let newTab = await browser.tabs.create({active: true, windowId: windowId});
+  sendResponse(newTab);
+  if(dispatch) {
+    dispatchGroupSwitch(windowId, oldGroupId, groupId);
+  }
+}
+
 async function redirectTab(message) {
   let tab = await browser.tabs.update(message.tabId, {
     loadReplace: true,
@@ -220,12 +247,16 @@ function onPortMessage(message) {
 }
 
 function portConnected(port) {
-  _ports.set(parseInt(port.name), port);
+  let windowId = parseInt(port.name);
+  _ports.set(windowId, port);
   port.onMessage.addListener(onPortMessage);
+  port.onDisconnect.addListener(() => {
+    _ports.delete(windowId);
+  });
   port.postMessage({method: "connected"});
 }
 
-function onMessage(message) {
+function onMessage(message, sender, sendResponse) {
   if(message.method == "neverAsk") {
     toggleNeverAsk(message.hostname, message.neverAsk);
   }
@@ -244,6 +275,10 @@ function onMessage(message) {
     else {
       redirectTab(message);
     }
+  }
+  else if(message.method == "createTab") {
+    createTab(message.windowId, message.groupId, sendResponse);
+    return true;
   }
 }
 

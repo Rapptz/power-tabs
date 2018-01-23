@@ -83,6 +83,10 @@ class GroupList {
     };
   }
 
+  setGroupBaton(groupId) {
+    this._groupBaton = this.getGroup(groupId);
+  }
+
   notifyGroupChange(tabs, groupId) {
     console.trace();
     this.port.postMessage({
@@ -722,6 +726,9 @@ var port;
         group.loadTab(tab);
         group.repositionTab(tab.id, tab.index);
       }
+    }
+    else if(message.method == "setGroupBaton" && message.windowId === groupList.windowId) {
+      groupList.setGroupBaton(message.groupId);
     }
   });
 
