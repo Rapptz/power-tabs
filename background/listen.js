@@ -1,9 +1,10 @@
 class TabInfo {
-  constructor(lastAccessed, groupId, windowId, discarded) {
+  constructor(lastAccessed, groupId, windowId, discarded, hidden) {
     this.lastAccessed = lastAccessed;
     this.groupId = groupId;
     this.windowId = windowId;
     this.discarded = discarded || false;
+    this.hidden = hidden || false;
 
     // set([hostname]) temporarily exempt
     // note: we late bind the set to save memory
@@ -33,6 +34,7 @@ var _ports = new Map();
 var _openSidebarOnClick = false;
 var _groups = [];
 var _discardOnGroupChange = false;
+var _hideOnGroupChange = true;
 
 function onGroupSwitch(windowId, beforeGroupId, afterGroupId) {
   // console.log(`${beforeGroupId} -> ${afterGroupId}`);
@@ -44,6 +46,25 @@ function onGroupSwitch(windowId, beforeGroupId, afterGroupId) {
       }
     }
     browser.tabs.discard(tabIds);
+  }
+
+  if(_hideOnGroupChange && browser.tabs.hasOwnProperty("hide")) {
+    let toHide = [];
+    let toShow = [];
+    for(let [key, value] of _tabInfo.entries()) {
+      if(value.windowId !== windowId) {
+        continue;
+      }
+
+      if(value.groupId === afterGroupId) {
+        toShow.push(key);
+      }
+      else {
+        toHide.push(key);
+      }
+    }
+    browser.tabs.hide(toHide);
+    browser.tabs.show(toShow);
   }
 }
 
@@ -304,7 +325,8 @@ async function ensureDefaultSettings() {
   const settings = {
     reverseTabDisplay: false,
     openSidebarOnClick: false,
-    discardOnGroupChange: false
+    discardOnGroupChange: false,
+    hideOnGroupChange: true
   };
 
   let keys = Object.keys(settings);
@@ -327,6 +349,7 @@ async function ensureDefaultSettings() {
 
   _openSidebarOnClick = before.openSidebarOnClick;
   _discardOnGroupChange = before.discardOnGroupChange;
+  _hideOnGroupChange = before.hideOnGroupChange;
   await browser.storage.local.set(before);
 }
 
@@ -339,7 +362,7 @@ async function prepare() {
         await browser.sessions.setWindowValue(tab.windowId, "active-group-id", groupId);
         await setActiveGroupIcon(tab.id, groupId);
       }
-      _tabInfo.set(tab.id, new TabInfo(tab.lastAccessed, groupId, tab.windowId, tab.discarded));
+      _tabInfo.set(tab.id, new TabInfo(tab.lastAccessed, groupId, tab.windowId, tab.discarded, tab.hidden));
     }
   }
 }
@@ -397,9 +420,16 @@ function onTabUpdate(tabId, changeInfo, tabInfo) {
   }
 
   if(changeInfo.hasOwnProperty("discarded")) {
-    let tabInfo = _tabInfo.get(tabId);
-    if(tabInfo) {
-      tabInfo.discarded = changeInfo.discarded;
+    let groupInfo = _tabInfo.get(tabId);
+    if(groupInfo) {
+      groupInfo.discarded = changeInfo.discarded;
+    }
+  }
+
+  if(changeInfo.hasOwnProperty("hidden")) {
+    let groupInfo = _tabInfo.get(tabId);
+    if(groupInfo) {
+      groupInfo.hidden = changeInfo.hidden;
     }
   }
 }
@@ -415,6 +445,10 @@ function onSettingChange(changes, area) {
 
   if(changes.hasOwnProperty("discardOnGroupChange")) {
     _discardOnGroupChange = changes.discardOnGroupChange.newValue;
+  }
+
+  if(changes.hasOwnProperty("hideOnGroupChange")) {
+    _hideOnGroupChange = changes.hideOnGroupChange.newValue;
   }
 
   if(changes.hasOwnProperty("groups")) {

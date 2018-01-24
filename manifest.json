@@ -19,7 +19,8 @@
         "sessions",
         "webRequestBlocking",
         "webRequest",
-        "history"
+        "history",
+        "tabHide"
     ],
 
     "commands": {

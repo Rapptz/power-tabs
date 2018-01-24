@@ -149,6 +149,16 @@ function loadRegularSettings(data) {
   if(!browser.tabs.hasOwnProperty("discard")) {
     discardOnGroupChange.setAttribute("disabled", 1);
   }
+
+  let hideOnGroupChange = document.getElementById("hideOnGroupChange");
+  hideOnGroupChange.checked = data.hideOnGroupChange;
+  hideOnGroupChange.addEventListener("click", (e) => {
+    saveSettings("hideOnGroupChange", hideOnGroupChange.checked);
+  });
+
+  if(!browser.tabs.hasOwnProperty("hide")) {
+    hideOnGroupChange.setAttribute("disabled", 1);
+  }
 }
 
 async function loadSettings() {
