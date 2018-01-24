@@ -347,7 +347,7 @@ async function prepare() {
 async function onTabCreated(tabInfo) {
   let groupId = await browser.sessions.getWindowValue(tabInfo.windowId, "active-group-id");
   await browser.sessions.setTabValue(tabInfo.id, "group-id", groupId);
-  _tabInfo.set(tabInfo.id, new TabInfo(tabInfo.lastAccessed, groupId));
+  _tabInfo.set(tabInfo.id, new TabInfo(tabInfo.lastAccessed, groupId, tabInfo.windowId));
   await setActiveGroupIcon(tabInfo.id, groupId);
 }
 
