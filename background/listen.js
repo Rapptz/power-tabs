@@ -36,6 +36,42 @@ var _groups = [];
 var _discardOnGroupChange = false;
 var _hideOnGroupChange = true;
 
+async function changeAllTabVisbility(hide) {
+  if(!browser.tabs.hasOwnProperty("hide")) {
+    return;
+  }
+
+  let operation = hide ? browser.tabs.hide : browser.tabs.show;
+  let windows = await browser.windows.getAll({windowTypes: ['normal']});
+
+  let groupIds = new Set();
+  for(let windowInfo of windows) {
+    let activeGroupId = await browser.sessions.getWindowValue(windowInfo.id, "active-group-id");
+    let tabIds = [];
+    for(let [tabId, tabInfo] of _tabInfo.entries()) {
+      if(tabInfo.windowId !== windowInfo.id) {
+        continue;
+      }
+
+      // if we're showing a tab, then just add it to the array without discrimination.
+      if(!hide) {
+        tabIds.push(tabId);
+      }
+      // if we're hiding a tab then make sure it's part of the active group ID set
+      else if(tabInfo.groupId !== activeGroupId) {
+        tabIds.push(tabId);
+      }
+    }
+
+    try {
+      await operation(tabIds);
+    }
+    catch(e) {
+      console.log(e);
+    }
+  }
+}
+
 function onGroupSwitch(windowId, beforeGroupId, afterGroupId) {
   // console.log(`${beforeGroupId} -> ${afterGroupId}`);
   if(_discardOnGroupChange && browser.tabs.hasOwnProperty("discard")) {
@@ -449,6 +485,7 @@ function onSettingChange(changes, area) {
 
   if(changes.hasOwnProperty("hideOnGroupChange")) {
     _hideOnGroupChange = changes.hideOnGroupChange.newValue;
+    changeAllTabVisbility(_hideOnGroupChange);
   }
 
   if(changes.hasOwnProperty("groups")) {
