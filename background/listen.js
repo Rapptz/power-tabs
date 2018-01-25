@@ -294,12 +294,20 @@ function onPortMessage(message) {
       setActiveGroupIcon(tabId, message.groupId);
     }
 
-    if(message.active) {
-      browser.sessions.getWindowValue(message.windowId, "active-group-id").then((groupId) => {
+    browser.sessions.getWindowValue(message.windowId, "active-group-id").then((groupId) => {
+      if(message.active) {
         browser.sessions.setWindowValue(message.windowId, "active-group-id", message.groupId);
         dispatchGroupSwitch(message.windowId, groupId, message.groupId);
-      });
-    }
+      }
+      else if(_hideOnGroupChange && browser.tabs.hasOwnProperty("hide")) {
+        if(message.groupId === groupId) {
+          browser.tabs.show(message.tabIds);
+        }
+        else {
+          browser.tabs.hide(message.tabIds);
+        }
+      }
+    });
   }
 }
 
