@@ -36,6 +36,22 @@ var _groups = [];
 var _discardOnGroupChange = false;
 var _hideOnGroupChange = true;
 
+async function createContextMenus() {
+  let parent = await browser.menus.create({
+    title: "Move to Group",
+    contexts: ["tab"]
+  });
+
+  for(let g of _groups) {
+    await browser.menus.create({
+      id: g.uuid,
+      title: g.name,
+      parentId: parent,
+      contexts: ["tab"]
+    });
+  }
+}
+
 async function changeAllTabVisbility(hide) {
   if(!browser.tabs.hasOwnProperty("hide")) {
     return;
@@ -248,12 +264,15 @@ async function redirectTab(message) {
   await browser.history.deleteUrl({ url: message.originalUrl });
 }
 
-async function moveTabToGroup(message) {
+async function moveTabToGroup(message, redirect=true) {
   let oldGroupId = await browser.sessions.getTabValue(message.tabId, "group-id");
   dispatchGroupSwitch(message.windowId, oldGroupId, message.groupId);
   await browser.sessions.setTabValue(message.tabId, "group-id", message.groupId);
   await browser.sessions.setWindowValue(message.windowId, "active-group-id", message.groupId);
-  await redirectTab(message);
+
+  if(redirect) {
+    await redirectTab(message);
+  }
 
   let groupInfo = _tabInfo.get(message.tabId);
   if(groupInfo) {
@@ -395,6 +414,8 @@ async function ensureDefaultSettings() {
   _discardOnGroupChange = before.discardOnGroupChange;
   _hideOnGroupChange = before.hideOnGroupChange;
   await browser.storage.local.set(before);
+
+  createContextMenus();
 }
 
 async function prepare() {
@@ -501,7 +522,23 @@ function onSettingChange(changes, area) {
     browser.tabs.query({active: true}).then((tabs) => {
       tabs.forEach((t) => setActiveGroupIcon(t.id, _tabInfo.get(t.id).groupId))
     });
+    browser.menus.removeAll().then(() => {
+      createContextMenus();
+    });
   }
+}
+
+async function onMenuClicked(info, tab) {
+  let oldGroupId = await browser.sessions.getTabValue(tab.id, "group-id");
+  if(oldGroupId === info.menuItemId) {
+    return;
+  }
+
+  await moveTabToGroup({
+    tabId: tab.id,
+    groupId: info.menuItemId,
+    windowId: tab.windowId
+  }, false);
 }
 
 ensureDefaultSettings();
@@ -513,6 +550,7 @@ browser.tabs.onRemoved.addListener(onTabRemoved);
 browser.tabs.onAttached.addListener(onTabAttach);
 browser.tabs.onActivated.addListener(onTabActive);
 browser.tabs.onUpdated.addListener(onTabUpdate);
+browser.menus.onClicked.addListener(onMenuClicked);
 browser.windows.onRemoved.addListener(onWindowRemoved);
 browser.browserAction.onClicked.addListener(onClicked);
 browser.storage.onChanged.addListener(onSettingChange);

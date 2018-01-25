@@ -20,6 +20,7 @@
         "webRequestBlocking",
         "webRequest",
         "history",
+        "menus",
         "tabHide"
     ],
 
