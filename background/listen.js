@@ -25,7 +25,7 @@ class TabInfo {
   }
 }
 
-// tabId -> tabInfo 
+// tabId -> tabInfo
 var _tabInfo = new Map();
 var _groupSwitchTimeout = null;
 
@@ -427,7 +427,8 @@ async function prepare() {
         await browser.sessions.setWindowValue(tab.windowId, "active-group-id", groupId);
         await setActiveGroupIcon(tab.id, groupId);
       }
-      _tabInfo.set(tab.id, new TabInfo(tab.lastAccessed, groupId, tab.windowId, tab.discarded, tab.hidden));
+      let hidden = tab.hasOwnProperty("hidden") ? tab.hidden : false;
+      _tabInfo.set(tab.id, new TabInfo(tab.lastAccessed, groupId, tab.windowId, tab.discarded, hidden));
     }
   }
 }
