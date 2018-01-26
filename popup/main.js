@@ -116,6 +116,7 @@ class Group {
     this.open = data.open;
     this.active = data.active;
     this.colour = data.colour || '#000000';
+    this._filtered = 0;
     this.tabs = [];
   }
 
@@ -153,6 +154,10 @@ class Group {
     return foundIndex === -1 ? null : this.tabs[foundIndex];
   }
 
+  hasResults() {
+    return this._filtered !== 0;
+  }
+
   checkSubstring(substring) {
     if(substring.length == 0) {
       return;
@@ -166,11 +171,13 @@ class Group {
       }
     }
     this.setTabCount(filtered);
+    this._filtered = filtered;
   }
 
   hideAll() {
     this.tabs.forEach((t) => t.hide());
     this.setTabCount(this.tabs.length);
+    this._filtered = 0;
   }
 
   setTabCount(c) {
@@ -253,7 +260,13 @@ async function switchToLastActiveTab() {
   let tabs = await browser.tabs.query({windowId: browser.windows.WINDOW_ID_CURRENT, active: false});
   if(tabs.length > 0) {
     tabs.sort((a, b) => a.lastAccessed - b.lastAccessed);
-    await browser.tabs.update(tabs[tabs.length - 1].id, {active: true});
+    let tabId = tabs[tabs.length - 1].id;
+    await browser.runtime.sendMessage({
+      method: "forceGroupChange",
+      groupId: await browser.sessions.getTabValue(tabId, "group-id"),
+      tabId: tabId,
+      windowId: _windowId
+    });
     window.close();
   }
 }
@@ -477,7 +490,15 @@ document.addEventListener("keydown", (e) => {
   let up = e.key == "ArrowUp";
   if(e.target.hasAttribute("data-selectable")){
     e.preventDefault();
-    let elements = [...document.querySelectorAll("[data-selectable]:not(.hidden)")];
+    let elements;
+
+    if([...cache.values()].some((g) => g.hasResults())) {
+      elements = [...document.querySelectorAll("[data-selectable]:not(.hidden):not(.group)")];
+    }
+    else {
+      elements = [...document.querySelectorAll("[data-selectable]:not(.hidden)")];
+    }
+
     let index = elements.indexOf(_selectedElement);
     let newElement = elements[index + (up ? -1 : +1)];
     if(newElement !== undefined) {
