@@ -90,11 +90,14 @@ async function changeAllTabVisbility(hide) {
 
 async function onGroupSwitch(tabId, windowId, beforeGroupId, afterGroupId) {
   // don't do anything if the tab we're switching to is pinned
-  let tabInfo = await browser.tabs.get(tabId);
-  if(tabInfo.pinned) {
-    return;
+  if(tabId !== null) {
+    let tabInfo = await browser.tabs.get(tabId);
+    if(tabInfo.pinned) {
+      return;
+    }
   }
 
+  await browser.sessions.setWindowValue(windowId, "active-group-id", afterGroupId);
   if(_discardOnGroupChange && browser.tabs.hasOwnProperty("discard")) {
     let tabIds = [];
     for(let [key, value] of _tabInfo.entries()) {
@@ -102,7 +105,7 @@ async function onGroupSwitch(tabId, windowId, beforeGroupId, afterGroupId) {
         tabIds.push(key);
       }
     }
-    browser.tabs.discard(tabIds);
+    await browser.tabs.discard(tabIds);
   }
 
   if(_hideOnGroupChange && browser.tabs.hasOwnProperty("hide")) {
@@ -120,8 +123,8 @@ async function onGroupSwitch(tabId, windowId, beforeGroupId, afterGroupId) {
         toHide.push(key);
       }
     }
-    browser.tabs.hide(toHide);
-    browser.tabs.show(toShow);
+    await browser.tabs.hide(toHide);
+    await browser.tabs.show(toShow);
   }
 }
 
@@ -132,16 +135,16 @@ function postMessage(msg) {
 }
 
 function dispatchGroupSwitch(tabId, windowId, beforeGroupId, afterGroupId) {
-  if(_groupSwitchTimeout !== null) {
-    clearTimeout(_groupSwitchTimeout);
-    _groupSwitchTimeout = null;
-  }
-
-  if(beforeGroupId != afterGroupId) {
-    _groupSwitchTimeout = setTimeout(() => {
-      onGroupSwitch(tabId, windowId, beforeGroupId, afterGroupId);
+  if((afterGroupId && beforeGroupId) && beforeGroupId != afterGroupId) {
+    if(_groupSwitchTimeout !== null) {
+      clearTimeout(_groupSwitchTimeout);
       _groupSwitchTimeout = null;
-    }, 50);
+    }
+    _groupSwitchTimeout = setTimeout(() => {
+      onGroupSwitch(tabId, windowId, beforeGroupId, afterGroupId).then(() => {
+        _groupSwitchTimeout = null;
+      });
+    }, 100);
   }
 }
 
@@ -238,6 +241,8 @@ async function createTab(windowId, groupId, sendResponse) {
   let oldGroupId = await browser.sessions.getWindowValue(windowId, "active-group-id");
   let dispatch = oldGroupId !== groupId;
   if(dispatch) {
+    // have to call this first so onTabCreate knows what to do with this tab
+    // regardless of the state of the dispatch switch
     await browser.sessions.setWindowValue(windowId, "active-group-id", groupId);
   }
 
@@ -273,7 +278,6 @@ async function moveTabToGroup(message, redirect=true) {
   let oldGroupId = await browser.sessions.getTabValue(message.tabId, "group-id");
   dispatchGroupSwitch(message.tabId, message.windowId, oldGroupId, message.groupId);
   await browser.sessions.setTabValue(message.tabId, "group-id", message.groupId);
-  await browser.sessions.setWindowValue(message.windowId, "active-group-id", message.groupId);
 
   if(redirect) {
     await redirectTab(message);
@@ -304,7 +308,6 @@ function onPortMessage(message) {
     }
 
     browser.sessions.getWindowValue(message.windowId, "active-group-id").then((groupId) => {
-      browser.sessions.setWindowValue(message.windowId, "active-group-id", message.groupId);
       dispatchGroupSwitch(message.tabId, message.windowId, groupId, message.groupId);
     });
     setActiveGroupIcon(message.tabId, message.groupId);
@@ -320,7 +323,6 @@ function onPortMessage(message) {
 
     browser.sessions.getWindowValue(message.windowId, "active-group-id").then((groupId) => {
       if(message.active) {
-        browser.sessions.setWindowValue(message.windowId, "active-group-id", message.groupId);
         dispatchGroupSwitch(message.activeTabId, message.windowId, groupId, message.groupId);
       }
       else if(_hideOnGroupChange && browser.tabs.hasOwnProperty("hide")) {
@@ -443,6 +445,10 @@ async function onTabCreated(tabInfo) {
   await browser.sessions.setTabValue(tabInfo.id, "group-id", groupId);
   _tabInfo.set(tabInfo.id, new TabInfo(tabInfo.lastAccessed, groupId, tabInfo.windowId));
   await setActiveGroupIcon(tabInfo.id, groupId);
+  postMessage({
+    method: "onTabCreated",
+    data: tabInfo
+  });
 }
 
 function _upsertTab(tabId, groupId, windowId) {
@@ -461,7 +467,6 @@ async function onTabActive(activeInfo) {
   let groupId = await browser.sessions.getTabValue(activeInfo.tabId, "group-id");
   let activeGroupId = await browser.sessions.getWindowValue(activeInfo.windowId, "active-group-id");
   if(groupId !== activeGroupId) {
-    await browser.sessions.setWindowValue(activeInfo.windowId, "active-group-id", groupId);
     dispatchGroupSwitch(activeInfo.tabId, activeInfo.windowId, activeGroupId, groupId);
   }
 

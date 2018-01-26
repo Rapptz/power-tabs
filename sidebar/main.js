@@ -43,7 +43,6 @@ class GroupList {
 
     // event registration for tab syncing
     browser.tabs.onActivated.addListener((info) => this.onActivated(info));
-    browser.tabs.onCreated.addListener((info) => this.onCreated(info));
     browser.tabs.onRemoved.addListener((tabId, info) => this.onRemoved(tabId, info));
     browser.tabs.onDetached.addListener((tabId, info) => this.onDetached(tabId, info));
     browser.tabs.onAttached.addListener((tabId, info) => this.onAttached(tabId, info));
@@ -491,9 +490,8 @@ class GroupList {
       entry.toggleVisibility(entry.shouldHide(this._searchBar.value));
     }
 
-    let assignedGroup = this._groupBaton || this.activeGroup;
     browser.sessions.getTabValue(entry.id, "group-id").then((groupId) => {
-      let group = groupId ? this.getGroup(groupId) : assignedGroup;
+      let group = this._groupBaton ? this._groupBaton : this.getGroup(groupId);
       if(group) {
         let relativeTab = tabInfo.hasOwnProperty("openerTabId") ?
                           this.getTab(tabInfo.openerTabId) : group.getRightBefore(entry.index);
@@ -502,8 +500,8 @@ class GroupList {
           this.setActive(entry, true);
         }
       }
+      this._groupBaton = null;
     });
-    this._groupBaton = null;
   }
 
   _removeTab(tabId) {
@@ -715,27 +713,31 @@ class GroupList {
 var groupList;
 var port;
 
+function onMessage(message) {
+  if(message.method == "onTabCreated") {
+    groupList.onCreated(message.data);
+  }
+  else if(message.method == "moveTabGroup") {
+    let tab = groupList.getTab(message.tabId);
+    let group = groupList.getGroup(message.groupId);
+    if(tab && group) {
+      tab.detach();
+      group.loadTab(tab);
+      group.repositionTab(tab.id, tab.index);
+    }
+  }
+  else if(message.method == "setGroupBaton" && message.windowId === groupList.windowId) {
+    groupList.setGroupBaton(message.groupId);
+  }
+}
+
 (async () => {
   groupList = new GroupList();
   await groupList.populate();
 
   port = browser.runtime.connect({name: groupList.windowId.toString() });
   groupList.port = port;
-
-  port.onMessage.addListener((message) => {
-    if(message.method == "moveTabGroup") {
-      let tab = groupList.getTab(message.tabId);
-      let group = groupList.getGroup(message.groupId);
-      if(tab && group) {
-        tab.detach();
-        group.loadTab(tab);
-        group.repositionTab(tab.id, tab.index);
-      }
-    }
-    else if(message.method == "setGroupBaton" && message.windowId === groupList.windowId) {
-      groupList.setGroupBaton(message.groupId);
-    }
-  });
+  port.onMessage.addListener(onMessage);
 
   window.addEventListener("unload", (e) => {
     port.disconnect();
