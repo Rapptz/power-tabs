@@ -42,8 +42,9 @@ function createIcon(favIconUrl) {
 }
 
 class Tab {
-  constructor(data) {
+  constructor(data, parent) {
     this.data = data;
+    this.group = parent;
 
     let tab = document.createElement("div");
     tab.classList.add("tab");
@@ -64,7 +65,7 @@ class Tab {
 
     tab.addEventListener("click", (e) => {
       e.preventDefault();
-      browser.tabs.update(this.id, {active: true});
+      this.setActive();
       e.stopPropagation();
     });
   }
@@ -85,6 +86,23 @@ class Tab {
     this.view.classList.remove("hidden");
   }
 
+  get hidden() {
+    return this.view.classList.contains("hidden");
+  }
+
+  setActive() {
+    browser.runtime.sendMessage({
+      method: "forceGroupChange",
+      groupId: this.group.uuid,
+      tabId: this.id,
+      windowId: _windowId
+    }).then((after) => {
+      currentTab = after;
+      currentGroup = this.group;
+      updateTabDisplay();
+    });
+  }
+
   matches(substr) {
     let regex = new RegExp(escapeRegex(substr), "i");
     return this.data.title.search(regex) !== -1 || this.data.url.search(regex) !== -1;
@@ -102,7 +120,7 @@ class Group {
   }
 
   addTab(tab) {
-    this.tabs.push(new Tab(tab));
+    this.tabs.push(new Tab(tab, this));
   }
 
   toJSON() {
@@ -128,6 +146,11 @@ class Group {
       return element.lastAccessed > arr[maxIndex].lastAccessed ? index : maxIndex
     }, 0);
     return this.tabs[index];
+  }
+
+  getFirstVisibleTab() {
+    let foundIndex = this.tabs.findIndex((t) => !t.hidden);
+    return foundIndex === -1 ? null : this.tabs[foundIndex];
   }
 
   checkSubstring(substring) {
@@ -203,11 +226,7 @@ class Group {
     this.view.addEventListener("click", (e) => {
       let tab = this.getLatestTab();
       if(tab) {
-        browser.tabs.update(tab.id, {active: true}).then((after) => {
-          currentTab = after;
-          currentGroup = this;
-          updateTabDisplay();
-        });
+        tab.setActive();
       }
       else {
         browser.runtime.sendMessage({
@@ -230,6 +249,15 @@ class Group {
   }
 };
 
+async function switchToLastActiveTab() {
+  let tabs = await browser.tabs.query({windowId: browser.windows.WINDOW_ID_CURRENT, active: false});
+  if(tabs.length > 0) {
+    tabs.sort((a, b) => a.lastAccessed - b.lastAccessed);
+    await browser.tabs.update(tabs[tabs.length - 1].id, {active: true});
+    window.close();
+  }
+}
+
 searchBar.addEventListener("keyup", (e) => {
   if(searchBar.value !== _lastSearch) {
     swapSelectedWith(searchBar);
@@ -240,6 +268,29 @@ searchBar.addEventListener("keyup", (e) => {
   for(let g of cache.values()) {
     g.hideAll();
     g.checkSubstring(searchBar.value);
+  }
+
+  if(e.key === "Enter") {
+    let activeTab = null;
+
+    // get the first tab result if we have a filter in place
+    for(let group of cache.values()) {
+      let firstTab = group.getFirstVisibleTab();
+      if(firstTab) {
+        activeTab = firstTab;
+        break;
+      }
+    }
+
+    // if we haven't found a result then we should default to
+    // the last accessed tab outside of our current one
+    if(activeTab === null) {
+      switchToLastActiveTab();
+    }
+    else {
+      activeTab.setActive();
+      window.close();
+    }
   }
 });
 
@@ -420,7 +471,7 @@ document.addEventListener("keydown", (e) => {
     // simulate a click and propagate to the proper onclick handler
     _selectedElement.click();
     swapSelectedWith(searchBar);
-    return;
+    window.close();
   }
 
   let up = e.key == "ArrowUp";

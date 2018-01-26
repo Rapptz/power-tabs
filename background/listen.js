@@ -274,6 +274,16 @@ async function redirectTab(message) {
   await browser.history.deleteUrl({ url: message.originalUrl });
 }
 
+async function forceGroupChange(message) {
+  let oldGroupId = await browser.sessions.getWindowValue(message.windowId, "active-group-id");
+  await browser.sessions.setWindowValue(message.windowId, "active-group-id", message.groupId);
+
+  // since we update the window value above, onTabUpdate down there won't actually dispatch anything
+  // we might have to worry about activeSync though.
+  await browser.tabs.update(message.tabId, {active: true});
+  dispatchGroupSwitch(null, message.windowId, oldGroupId, message.groupId);
+}
+
 async function moveTabToGroup(message, redirect=true) {
   let oldGroupId = await browser.sessions.getTabValue(message.tabId, "group-id");
   dispatchGroupSwitch(message.tabId, message.windowId, oldGroupId, message.groupId);
@@ -370,6 +380,9 @@ function onMessage(message, sender, sendResponse) {
   else if(message.method == "createTab") {
     createTab(message.windowId, message.groupId, sendResponse);
     return true;
+  }
+  else if(message.method == "forceGroupChange") {
+    forceGroupChange(message);
   }
 }
 
