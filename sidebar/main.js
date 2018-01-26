@@ -88,9 +88,12 @@ class GroupList {
   }
 
   notifyGroupChange(tabs, groupId) {
+    let activeIndex = tabs.findIndex((t) => t.active);
     this.port.postMessage({
       method: "syncTabs",
       tabIds: tabs.map((t) => t.id),
+      active: activeIndex !== -1,
+      activeTabId: activeIndex !== -1 ? tabs[activeIndex].id : null,
       groupId: groupId,
       windowId: this.windowId
     });
@@ -627,6 +630,7 @@ class GroupList {
         method: "syncTabs",
         tabIds: [this._dragContext.tab.id],
         active: this._dragContext.tab.active,
+        activeTabId: this._dragContext.tab.active ? this._dragContext.tab.id : null,
         groupId: group.uuid,
         windowId: this.windowId
       });
@@ -634,11 +638,13 @@ class GroupList {
     else {
       this._dragContext.group.styleSelectedDragStart(false);
       let tabs = this._dragContext.group.popSelected();
+      let activeIndex = tabs.findIndex((t) => t.active);
       await group.appendTabs(tabs, relativeTab);
       await this.port.postMessage({
         method: "syncTabs",
         tabIds: tabs.map((t) => t.id),
-        active: tabs.some((t) => t.active),
+        active: activeIndex !== -1,
+        activeTabId: activeIndex !== -1 ? tabs[activeIndex].id : null,
         groupId: group.uuid,
         windowId: this.windowId
       });
