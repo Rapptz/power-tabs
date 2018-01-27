@@ -106,6 +106,7 @@ body {
 
 #new-group-button {
   background: url("/icons/new_group.svg") no-repeat center;
+  background-size: 24px;
 }
 
 #settings-button {

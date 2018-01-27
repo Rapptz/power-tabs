@@ -281,19 +281,20 @@ details[open] .summary-icon {
 }
 
 #new-tab-button {
-  background-image: url("../icons/new_tab.svg");
+  background-image: url("/icons/new_tab.svg");
   background-repeat: no-repeat;
   background-position: center;
 }
 
 #new-group-button {
-  background-image: url("../icons/new_group.svg");
+  background-image: url("/icons/new_group.svg");
+  background-size: 24px;
   background-repeat: no-repeat;
   background-position: center;
 }
 
 #settings-button {
-  background-image: url("../icons/settings.svg");
+  background-image: url("/icons/settings.svg");
   background-repeat: no-repeat;
   background-position: center;
 }
