@@ -3,9 +3,38 @@ function escapeRegex(e) {
     return e.replace(_escapedRegex, '\\$&');
 }
 
+function _findBestMatch(regex, str) {
+  let matches = [];
+  let match;
+  while((match = regex.exec(str)) !== null) {
+    // This is necessary to avoid infinite loops with zero-width matches
+    if(match.index === regex.lastIndex) {
+      regex.lastIndex++;
+    }
+
+    // our match will always be at group 1 instead of group 0 due to our lookahead
+    matches.push([match.index, match[1]]);
+  }
+
+  if(matches.length === 0) {
+    return null;
+  }
+
+  let result = matches.sort((a, b) => {
+    return a[1].length - b[1].length;
+  })[0];
+
+  return {
+    subLength: result[1].length,
+    start: result[0]
+  };
+}
+
+
 function fuzzyMatchTabObjects(query, tabs) {
   let suggestions = [];
-  let regex = new RegExp(Array.prototype.map.call(query, escapeRegex).join('.*?'), 'i');
+  let pattern =  `(?=(${Array.from(query).map(escapeRegex).join('.*?')}))`;
+  let regex = new RegExp(pattern, "gi");
   let urlRegex = new RegExp(escapeRegex(query), "i");
 
   for(let tab of tabs) {
@@ -21,11 +50,11 @@ function fuzzyMatchTabObjects(query, tabs) {
       });
     }
     else {
-      let match = regex.exec(tab.title);
+      let match = _findBestMatch(regex, tab.title);
       if(match !== null) {
         suggestions.push({
-          subLength: match[0].length,
-          start: match.index,
+          subLength: match.subLength,
+          start: match.start,
           isUrl: false,
           tab: tab
         });

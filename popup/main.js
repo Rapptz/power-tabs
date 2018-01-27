@@ -283,14 +283,15 @@ searchBar.addEventListener("keyup", (e) => {
     // get the first tab result if we have a filter in place
     let activeTab = document.querySelector(".tab");
 
-    // if we haven't found a result then we should default to
-    // the last accessed tab outside of our current one
-    if(activeTab === null) {
-      switchToLastActiveTab();
-    }
-    else {
+    if(activeTab !== null) {
       activeTab.click();
       window.close();
+    }
+
+    // if we haven't found a result then we should default to
+    // the last accessed tab outside of our current one
+    if(searchBar.value.length === 0) {
+      switchToLastActiveTab();
     }
   }
 });
