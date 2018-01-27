@@ -298,7 +298,8 @@ searchBar.addEventListener("keyup", (e) => {
 cancelSearch.addEventListener("click", (e) => {
   searchBar.value = "";
   for(let g of cache.values()) {
-    g.hideAll();
+    g.show();
+    g.tabs.forEach((t) => t.hide());
   }
 });
 
