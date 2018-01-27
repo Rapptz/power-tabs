@@ -280,16 +280,8 @@ searchBar.addEventListener("keyup", (e) => {
   }
 
   if(e.key === "Enter") {
-    let activeTab = null;
-
     // get the first tab result if we have a filter in place
-    for(let group of cache.values()) {
-      let firstTab = group.getFirstVisibleTab();
-      if(firstTab) {
-        activeTab = firstTab;
-        break;
-      }
-    }
+    let activeTab = document.querySelector(".tab");
 
     // if we haven't found a result then we should default to
     // the last accessed tab outside of our current one
@@ -297,7 +289,7 @@ searchBar.addEventListener("keyup", (e) => {
       switchToLastActiveTab();
     }
     else {
-      activeTab.setActive();
+      activeTab.click();
       window.close();
     }
   }
