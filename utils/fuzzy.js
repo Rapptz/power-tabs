@@ -9,12 +9,14 @@ function fuzzyMatchTabObjects(query, tabs) {
   let urlRegex = new RegExp(escapeRegex(query), "i");
 
   for(let tab of tabs) {
-    let urlIndex = tab.url.search(urlRegex);
+    let domainName = new URL(tab.url).hostname;
+    let urlIndex = domainName.search(urlRegex);
     if(urlIndex !== -1) {
       suggestions.push({
         subLength: query.length,
         start: urlIndex,
         isUrl: true,
+        domain: domainName,
         tab: tab
       });
     }
@@ -35,7 +37,7 @@ function fuzzyMatchTabObjects(query, tabs) {
     if(a.isUrl === b.isUrl) {
       if(a.subLength - b.subLength === 0) {
         if(a.start - b.start === 0) {
-          return a.isUrl ? a.tab.url.localeCompare(b.tab.url) : a.tab.title.localeCompare(b.tab.title);
+          return a.isUrl ? a.domain.localeCompare(b.domain) : a.tab.title.localeCompare(b.tab.title);
         }
         return a.start - b.start;
       }
