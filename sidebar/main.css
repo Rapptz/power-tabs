@@ -243,10 +243,6 @@ details[open] .summary-icon {
   margin: 1px;
 }
 
-.group-new-tab-button:hover {
-  background-color: var(--ghost-button-hover2);
-}
-
 .edit-group-button {
   background-image: url("../icons/edit.svg");
   background-size: 18px;
@@ -255,10 +251,6 @@ details[open] .summary-icon {
   width: 18px;
   height: 18px;
   margin: 2px;
-}
-
-.edit-group-button:hover {
-  background-color: hsl(0, 0%, 75%);
 }
 
 #controls {
