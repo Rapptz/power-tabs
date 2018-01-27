@@ -544,7 +544,12 @@ function onSettingChange(changes, area) {
   if(changes.hasOwnProperty("groups")) {
     _groups = changes.groups.newValue;
     browser.tabs.query({active: true}).then((tabs) => {
-      tabs.forEach((t) => setActiveGroupIcon(t.id, _tabInfo.get(t.id).groupId))
+      tabs.forEach((t) => {
+        let groupInfo = _tabInfo.get(t.id);
+        if(groupInfo) {
+          setActiveGroupIcon(t.id, groupInfo.groupId);
+        }
+      });
     });
     browser.menus.removeAll().then(() => {
       createContextMenus();
