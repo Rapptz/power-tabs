@@ -67,6 +67,7 @@ body {
   align-items: center;
   -moz-appearance: textfield;
   width: 90%;
+  margin-right: 4px;
 }
 
 #search-icon {
@@ -97,7 +98,6 @@ body {
   min-width: 24px;
   background-color: transparent;
   border: 1px solid transparent;
-  margin-left: 4px;
 }
 
 .control:hover {
@@ -106,7 +106,7 @@ body {
 
 #new-group-button {
   background: url("/icons/new_group.svg") no-repeat center;
-  background-size: 24px;
+  background-size: contain;
 }
 
 #settings-button {

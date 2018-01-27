@@ -280,7 +280,7 @@ details[open] .summary-icon {
 
 #new-group-button {
   background-image: url("/icons/new_group.svg");
-  background-size: 24px;
+  background-size: contain;
   background-repeat: no-repeat;
   background-position: center;
 }
