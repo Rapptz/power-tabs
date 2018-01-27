@@ -3,83 +3,38 @@ function escapeRegex(e) {
     return e.replace(_escapedRegex, '\\$&');
 }
 
-function _findBestMatch(regex, str) {
-  let matches = [];
-  let match;
-  while((match = regex.exec(str)) !== null) {
-    // This is necessary to avoid infinite loops with zero-width matches
-    if(match.index === regex.lastIndex) {
-      regex.lastIndex++;
-    }
+function score(haystack, regex) {
+  var match = regex.exec(haystack);
 
-    // our match will always be at group 1 instead of group 0 due to our lookahead
-    matches.push([match.index, match[1]]);
+  if(match == null) {
+    return Number.MAX_VALUE;
   }
 
-  if(matches.length === 0) {
-    return null;
-  }
+  match.shift();
 
-  let result = matches.sort((a, b) => {
-    return a[1].length - b[1].length;
-  })[0];
-
-  return {
-    subLength: result[1].length,
-    start: result[0]
-  };
+  return match.filter(m => m).map(m => m.length).reduce((a, b) => a + b, 0);
 }
 
+function tabScore(tab, regex) {
+  return Math.min(
+    score(tab.title, regex),
+    score(new URL(tab.url).hostname, regex)
+  );
+}
 
 function fuzzyMatchTabObjects(query, tabs) {
-  let suggestions = [];
-  let pattern =  `(?=(${Array.from(query).map(escapeRegex).join('.*?')}))`;
-  let regex = new RegExp(pattern, "gi");
-  let urlRegex = new RegExp(escapeRegex(query), "i");
+  let pattern = Array.from(query).map(escapeRegex).join('(.*?)');
+  let regex = new RegExp(pattern, 'i');
 
-  for(let tab of tabs) {
-    let domainName = new URL(tab.url).hostname;
-    let urlIndex = domainName.search(urlRegex);
-    if(urlIndex !== -1) {
-      suggestions.push({
-        subLength: query.length,
-        start: urlIndex,
-        isUrl: true,
-        domain: domainName,
-        tab: tab
-      });
-    }
-    else {
-      let match = _findBestMatch(regex, tab.title);
-      if(match !== null) {
-        suggestions.push({
-          subLength: match.subLength,
-          start: match.start,
-          isUrl: false,
-          tab: tab
-        });
-      }
+  let results = [];
+
+  for (let tab of tabs) {
+    let score = tabScore(tab, regex);
+    if(tabScore != Number.MAX_VALUE) {
+      results.push({ tab: tab, score: score });
     }
   }
-
-  function cmp(a, b) {
-    if(a.isUrl === b.isUrl) {
-      if(a.subLength - b.subLength === 0) {
-        if(a.start - b.start === 0) {
-          return a.isUrl ? a.domain.localeCompare(b.domain) : a.tab.title.localeCompare(b.tab.title);
-        }
-        return a.start - b.start;
-      }
-      return a.subLength - b.subLength;
-    }
-    else {
-      // if one is different than the other then the URL search ranks lower
-      // than the non-URL search
-      return a.isUrl - b.isUrl;
-    }
-  };
-
-  return suggestions.sort(cmp).map(o => o.tab);
+  return results.sort((a, b) => a.score - b.score).map(r => r.tab);
 }
 
 function fuzzyfinder(text, collections, key) {
