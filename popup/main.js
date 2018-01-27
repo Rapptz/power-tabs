@@ -3,6 +3,7 @@ var currentTab = null;
 var currentGroup = null;
 var searchBar = document.getElementById("search");
 var _selectedElement = searchBar;
+var _allTabs = [];
 var _lastSearch = "";
 var _windowId = null;
 var cancelSearch = document.getElementById("cancel-search-icon");
@@ -56,6 +57,12 @@ class Tab {
     this.view = tab;
     tab.setAttribute("data-selectable", 1);
 
+    let groupBadge = document.createElement("div");
+    groupBadge.textContent = String.fromCodePoint(parent.name.codePointAt(0));
+    groupBadge.className = "group-badge";
+    groupBadge.title = parent.name;
+    setDefaultGroupColour(groupBadge, parent.colour);
+
     let icon = createIcon(data.hasOwnProperty('favIconUrl') ? data.favIconUrl : null);
     let name = document.createElement("div");
     name.classList.add("tab-name");
@@ -65,6 +72,7 @@ class Tab {
 
     tab.appendChild(icon);
     tab.appendChild(name);
+    tab.appendChild(groupBadge);
 
     tab.addEventListener("click", (e) => {
       e.preventDefault();
@@ -80,14 +88,14 @@ class Tab {
   hide() {
     if(!this.hidden) {
       this.hidden = true;
-      this.group.view.removeChild(this.view);
+      this.group.view.parentNode.removeChild(this.view);
     }
   }
 
   show() {
     if(this.hidden) {
       this.hidden = false;
-      this.group.view.appendChild(this.view);
+      this.group.view.parentNode.appendChild(this.view);
     }
   }
 
@@ -117,7 +125,6 @@ class Group {
     this.open = data.open;
     this.active = data.active;
     this.colour = data.colour || '#000000';
-    this._filtered = 0;
     this.tabs = [];
   }
 
@@ -155,25 +162,12 @@ class Group {
     return foundIndex === -1 ? null : this.tabs[foundIndex];
   }
 
-  hasResults() {
-    return this._filtered !== 0;
+  hide() {
+    this.view.classList.add("hidden");
   }
 
-  checkSubstring(substring) {
-    if(substring.length == 0) {
-      return;
-    }
-
-    let filtered = fuzzyMatchTabObjects(substring, this.tabs);
-    filtered.forEach(t => t.show());
-    this.setTabCount(filtered.length);
-    this._filtered = filtered.length;
-  }
-
-  hideAll() {
-    this.tabs.forEach((t) => t.hide());
-    this.setTabCount(this.tabs.length);
-    this._filtered = 0;
+  show() {
+    this.view.classList.remove("hidden");
   }
 
   setTabCount(c) {
@@ -274,9 +268,15 @@ searchBar.addEventListener("keyup", (e) => {
 
   _lastSearch = searchBar.value;
   cancelSearch.classList.toggle("hidden", searchBar.value.length == 0);
-  for(let g of cache.values()) {
-    g.hideAll();
-    g.checkSubstring(searchBar.value);
+
+  let groups = Array.from(cache.values());
+  _allTabs.forEach((t) => t.hide());
+  groups.forEach((g) => g.show());
+
+  if(searchBar.value.length !== 0) {
+    groups.forEach((g) => g.hide());
+    let filtered = fuzzyMatchTabObjects(searchBar.value, _allTabs);
+    filtered.forEach(t => t.show());
   }
 
   if(e.key === "Enter") {
@@ -337,6 +337,7 @@ async function prepare() {
 
   updateTabDisplay();
   updateGroupDisplay();
+  _allTabs = [].concat.apply([], Array.from(cache.values()).map(g => g.tabs));
 }
 
 var checkbox = document.getElementById("always-open");
@@ -486,15 +487,7 @@ document.addEventListener("keydown", (e) => {
   let up = e.key == "ArrowUp";
   if(e.target.hasAttribute("data-selectable")){
     e.preventDefault();
-    let elements;
-
-    if([...cache.values()].some((g) => g.hasResults())) {
-      elements = [...document.querySelectorAll("[data-selectable]:not(.hidden):not(.group)")];
-    }
-    else {
-      elements = [...document.querySelectorAll("[data-selectable]:not(.hidden)")];
-    }
-
+    let elements = [...document.querySelectorAll("[data-selectable]:not(.hidden)")];
     let index = elements.indexOf(_selectedElement);
     let newElement = elements[index + (up ? -1 : +1)];
     if(newElement !== undefined) {

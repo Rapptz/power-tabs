@@ -18,6 +18,21 @@ function hexToRgb(hex) {
   return intToRGB(num);
 }
 
+function textColourFromHex(hexCode, simple=true) {
+  if(simple) {
+    let [r, g, b] = hexToRgb(hexCode);
+    return ((r * 0.299 + g * 0.587 + b * 0.114) > 186) ? '#000000' : '#ffffff';
+  }
+
+  let [r, g, b] = hexToRgb(hexCode).map((c) => {
+    let v = c / 255;
+    return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+  });
+
+  let L = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+  return (L > 0.179) ? '#000000' : '#ffffff';
+}
+
 function hexToHsl(hex) {
   let [r, g, b] = hexToRgb(hex);
   return rgbToHsl(r, g, b);

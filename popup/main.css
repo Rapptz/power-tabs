@@ -39,7 +39,7 @@ body {
 .tab-icon {
   width: 16px;
   height: 16px;
-  margin-right: 4px;
+  margin: 0px 4px;
   background-size: contain;
   background-repeat: no-repeat;
   background-position: center;
@@ -125,8 +125,19 @@ body {
   display: flex;
   align-items: center;
   margin-bottom: 4px;
-  padding-left: 16px;
   padding-bottom: 1px;
+  max-height: 20px;
+}
+
+.group-badge {
+  color: white;
+  width: 16px;
+  height: 16px;
+  font-size: 13px;
+  margin: 0px 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .tab-name {
