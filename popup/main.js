@@ -44,11 +44,14 @@ function createIcon(favIconUrl) {
 class Tab {
   constructor(data, parent) {
     this.data = data;
+    this.id = data.id;
+    this.url = data.url;
+    this.title = data.title;
     this.group = parent;
+    this.hidden = true;
 
     let tab = document.createElement("div");
     tab.classList.add("tab");
-    tab.classList.add("hidden");
 
     this.view = tab;
     tab.setAttribute("data-selectable", 1);
@@ -74,20 +77,18 @@ class Tab {
     return this.data.lastAccessed;
   }
 
-  get id() {
-    return this.data.id;
-  }
-
   hide() {
-    this.view.classList.add("hidden");
+    if(!this.hidden) {
+      this.hidden = true;
+      this.group.view.removeChild(this.view);
+    }
   }
 
   show() {
-    this.view.classList.remove("hidden");
-  }
-
-  get hidden() {
-    return this.view.classList.contains("hidden");
+    if(this.hidden) {
+      this.hidden = false;
+      this.group.view.appendChild(this.view);
+    }
   }
 
   setActive() {
@@ -163,15 +164,10 @@ class Group {
       return;
     }
 
-    let filtered = 0;
-    for(let tab of this.tabs) {
-      if(tab.matches(substring)) {
-        tab.show();
-        ++filtered;
-      }
-    }
-    this.setTabCount(filtered);
-    this._filtered = filtered;
+    let filtered = fuzzyMatchTabObjects(substring, this.tabs);
+    filtered.forEach(t => t.show());
+    this.setTabCount(filtered.length);
+    this._filtered = filtered.length;
   }
 
   hideAll() {
@@ -250,9 +246,9 @@ class Group {
       }
     });
 
-    for(let tab of this.tabs) {
-      this._tabView.appendChild(tab.view);
-    }
+    // for(let tab of this.tabs) {
+    //   this._tabView.appendChild(tab.view);
+    // }
   }
 };
 

@@ -3,6 +3,54 @@ function escapeRegex(e) {
     return e.replace(_escapedRegex, '\\$&');
 }
 
+function fuzzyMatchTabObjects(query, tabs) {
+  let suggestions = [];
+  let regex = new RegExp(Array.prototype.map.call(query, escapeRegex).join('.*?'), 'i');
+  let urlRegex = new RegExp(escapeRegex(query), "i");
+
+  for(let tab of tabs) {
+    let urlIndex = tab.url.search(urlRegex);
+    if(urlIndex !== -1) {
+      suggestions.push({
+        subLength: query.length,
+        start: urlIndex,
+        isUrl: true,
+        tab: tab
+      });
+    }
+    else {
+      let match = regex.exec(tab.title);
+      if(match !== null) {
+        suggestions.push({
+          subLength: match[0].length,
+          start: match.index,
+          isUrl: false,
+          tab: tab
+        });
+      }
+    }
+  }
+
+  function cmp(a, b) {
+    if(a.isUrl === b.isUrl) {
+      if(a.subLength - b.subLength === 0) {
+        if(a.start - b.start === 0) {
+          return a.isUrl ? a.tab.url.localeCompare(b.tab.url) : a.tab.title.localeCompare(b.tab.title);
+        }
+        return a.start - b.start;
+      }
+      return a.subLength - b.subLength;
+    }
+    else {
+      // if one is different than the other then the URL search ranks lower
+      // than the non-URL search
+      return a.isUrl - b.isUrl;
+    }
+  };
+
+  return suggestions.sort(cmp).map(o => o.tab);
+}
+
 function fuzzyfinder(text, collections, key) {
     let suggestions = [];
     let regex = new RegExp(Array.prototype.map.call(text, escapeRegex).join('.*?'), 'i');
