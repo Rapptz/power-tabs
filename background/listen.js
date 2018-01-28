@@ -135,7 +135,7 @@ function postMessage(msg) {
 }
 
 function dispatchGroupSwitch(tabId, windowId, beforeGroupId, afterGroupId) {
-  if((afterGroupId && beforeGroupId) && beforeGroupId != afterGroupId) {
+  if(afterGroupId && beforeGroupId !== afterGroupId) {
     if(_groupSwitchTimeout !== null) {
       clearTimeout(_groupSwitchTimeout);
       _groupSwitchTimeout = null;

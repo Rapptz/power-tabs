@@ -98,9 +98,14 @@ class GroupList {
     });
   }
 
-  async populate() {
-    let windowInfo = await browser.windows.getCurrent({populate: true});
+  async getWindowId() {
+    let windowInfo = await browser.windows.getCurrent({ windowTypes: ['normal'] });
     this.windowId = windowInfo.id;
+    return windowInfo.id;
+  }
+
+  async populate() {
+    let tabs = await browser.tabs.query({ windowId: this.windowId });
 
     let old = await browser.storage.local.get(["groups", "reverseTabDisplay"]);
     this._reverseTabDisplay = old.reverseTabDisplay;
@@ -108,7 +113,7 @@ class GroupList {
       // no pre-existing group so just make a dummy one
       // and fill it with the current tab data
       let group = new Group("untitled");
-      for(let tab of windowInfo.tabs) {
+      for(let tab of tabs) {
         let entry = new TabEntry(tab);
         if(tab.active) {
           this._activeTab = entry;
@@ -124,7 +129,7 @@ class GroupList {
     }
     else {
       // load our groups from localStorage
-      await this.loadFromLocalStorage(old.groups, windowInfo.tabs);
+      await this.loadFromLocalStorage(old.groups, tabs);
     }
 
     if(this._activeTab) {
@@ -144,6 +149,7 @@ class GroupList {
     }
 
     let oldActiveGroup = this.groups.find((g) => g.active) || this.groups[0];
+    let deadEntries = [];
 
     for(let tab of tabs) {
       let entry = new TabEntry(tab);
@@ -169,6 +175,7 @@ class GroupList {
         // which means we have to assign it to the last active group
         if(oldActiveGroup) {
           oldActiveGroup.addTab(entry);
+          deadEntries.push(entry);
         }
       }
     }
@@ -178,6 +185,10 @@ class GroupList {
       group.sortByPosition();
       group.toggleReverseDisplay(this._reverseTabDisplay);
       this._container.appendChild(group.view);
+    }
+
+    if(deadEntries.length > 0 && oldActiveGroup) {
+      this.notifyGroupChange(deadEntries, oldActiveGroup.uuid);
     }
   }
 
@@ -733,11 +744,14 @@ function onMessage(message) {
 
 (async () => {
   groupList = new GroupList();
-  await groupList.populate();
+  let windowId = await groupList.getWindowId();
 
-  port = browser.runtime.connect({name: groupList.windowId.toString() });
+  port = browser.runtime.connect({name: windowId.toString() });
   groupList.port = port;
   port.onMessage.addListener(onMessage);
+
+  await groupList.populate();
+
 
   window.addEventListener("unload", (e) => {
     port.disconnect();
