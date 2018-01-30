@@ -341,23 +341,13 @@ checkbox.addEventListener("click", (e) => {
 });
 
 document.getElementById("new-group-button").addEventListener("click", async (e) => {
-  let storage = await browser.storage.local.get("groups");
-  if(!storage.hasOwnProperty("groups")) {
-    return; // ?
-  }
-
-  let newGroup = new Group({
-    name: "untitled",
-    uuid: null,
-    open: false,
-    active: false,
-    colour: null
-  });
-
-  cache.set(newGroup.uuid, newGroup);
-  storage.groups.push(newGroup.toJSON());
-  await browser.storage.local.set(storage);
-  updateGroupDisplay();
+  browser.runtime.sendMessage({
+    method: "createGroup",
+    windowId: _windowId
+  }).then((groupInfo) => {
+    cache.set(groupInfo.uuid, new Group(groupInfo));
+    updateGroupDisplay();
+  })
 });
 
 document.getElementById("settings-button").addEventListener("click", () => {

@@ -273,7 +273,7 @@ async function createTab(windowId, groupId, sendResponse=null) {
   }
 }
 
-async function createGroup(windowId) {
+async function createGroup(windowId, sendResponse=null) {
   let newGroup = {
     name: "untitled",
     uuid: uuid4(),
@@ -286,7 +286,13 @@ async function createGroup(windowId) {
   await browser.storage.local.set({
     groups: _groups
   });
-  await createTab(windowId, newGroup.uuid);
+
+  if(sendResponse) {
+    sendResponse(newGroup);
+  }
+  else {
+    await createTab(windowId, newGroup.uuid);
+  }
 }
 
 async function redirectTab(message) {
@@ -433,6 +439,10 @@ function onMessage(message, sender, sendResponse) {
   }
   else if(message.method == "forceGroupChange") {
     forceGroupChange(message);
+  }
+  else if(message.method == "createGroup") {
+    createGroup(message.windowId, sendResponse);
+    return true;
   }
 }
 
