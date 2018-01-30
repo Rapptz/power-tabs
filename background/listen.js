@@ -36,6 +36,9 @@ var _groups = [];
 var _discardOnGroupChange = false;
 var _hideOnGroupChange = true;
 
+// windowId -> groupId for last active group
+var _activeGroupCache = new Map();
+
 async function createContextMenus() {
   let parent = await browser.menus.create({
     title: "Move to Group",
@@ -97,6 +100,7 @@ async function onGroupSwitch(tabId, windowId, beforeGroupId, afterGroupId) {
     }
   }
 
+  _activeGroupCache.set(windowId, beforeGroupId);
   await browser.sessions.setWindowValue(windowId, "active-group-id", afterGroupId);
   if(_discardOnGroupChange && browser.tabs.hasOwnProperty("discard")) {
     let tabIds = [];
@@ -237,7 +241,7 @@ async function toggleNeverAsk(domainName, value) {
   await browser.storage.local.set(settings);
 }
 
-async function createTab(windowId, groupId, sendResponse) {
+async function createTab(windowId, groupId, sendResponse=null) {
   let oldGroupId = await browser.sessions.getWindowValue(windowId, "active-group-id");
   let dispatch = oldGroupId !== groupId;
   if(dispatch) {
@@ -260,10 +264,29 @@ async function createTab(windowId, groupId, sendResponse) {
 
   // the onTabCreated event will handle the rest of the state switching here
   let newTab = await browser.tabs.create({active: true, windowId: windowId});
-  sendResponse(newTab);
+  if(sendResponse) {
+    sendResponse(newTab);
+  }
+
   if(dispatch) {
     dispatchGroupSwitch(newTab.id, windowId, oldGroupId, groupId);
   }
+}
+
+async function createGroup(windowId) {
+  let newGroup = {
+    name: "untitled",
+    uuid: uuid4(),
+    open: true,
+    active: true,
+    colour: '#000000'
+  };
+
+  _groups.push(newGroup);
+  await browser.storage.local.set({
+    groups: _groups
+  });
+  await createTab(windowId, newGroup.uuid);
 }
 
 async function redirectTab(message) {
@@ -282,6 +305,33 @@ async function forceGroupChange(message) {
   // we might have to worry about activeSync though.
   await browser.tabs.update(message.tabId, {active: true});
   dispatchGroupSwitch(null, message.windowId, oldGroupId, message.groupId);
+}
+
+async function switchGroup(windowId, groupId) {
+  if(!groupId) {
+    return;
+  }
+
+  let groupTabs = Array.from(_tabInfo.entries()).filter(([tabId, info]) => {
+    return info.windowId === windowId && info.groupId === groupId;
+  });
+
+  if(groupTabs.length === 0) {
+    // if we don't have any tabs in that group then let's create one
+    await createTab(windowId, groupId);
+  }
+
+  let lastAccessedIndex = groupTabs.reduce((maxIndex, element, index, arr) => {
+    return element[1].lastAccessed > arr[maxIndex][1].lastAccessed ? index : maxIndex;
+  }, 0);
+
+  let tabId = groupTabs[lastAccessedIndex][0];
+  let message = {
+    groupId: groupId,
+    windowId: windowId,
+    tabId: tabId
+  };
+  await forceGroupChange(message);
 }
 
 async function moveTabToGroup(message, redirect=true) {
@@ -570,6 +620,33 @@ async function onMenuClicked(info, tab) {
   }, false);
 }
 
+async function onCommand(command) {
+  let windowInfo = await browser.windows.getLastFocused({populate: false, windowTypes: ["normal"]});
+  if(command == "new-group") {
+    await createGroup(windowInfo.id);
+  }
+  else if(command == "switch-active") {
+    let newGroupId = _activeGroupCache.get(windowInfo.id);
+    await switchGroup(windowInfo.id, newGroupId);
+  }
+  else if(command == "switch-prev" || command == "switch-next") {
+    let currentGroupId = await browser.sessions.getWindowValue(windowInfo.id, "active-group-id");
+    let index = _groups.findIndex((g) => g.uuid === currentGroupId);
+    if(index !== -1) {
+      let newIndex = index + (command == "switch-prev" ? -1 : +1);
+      let groupId = newIndex >= _groups.length || newIndex < 0 ? null : _groups[newIndex].uuid;
+      await switchGroup(windowInfo.id, groupId);
+    }
+  }
+  else {
+    // the rest are switch-<number>
+    // so just strip off the switch- and parse the number
+    let index = parseInt(command.slice(7), 10) - 1;
+    let groupId = index >= _groups.length || index < 0 ? null : _groups[index].uuid;
+    await switchGroup(windowInfo.id, groupId);
+  }
+}
+
 ensureDefaultSettings();
 prepare();
 browser.runtime.onConnect.addListener(portConnected);
@@ -584,3 +661,4 @@ browser.windows.onRemoved.addListener(onWindowRemoved);
 browser.browserAction.onClicked.addListener(onClicked);
 browser.storage.onChanged.addListener(onSettingChange);
 browser.webRequest.onBeforeRequest.addListener(onBeforeRequest, {urls: ["<all_urls>"], types: ["main_frame"]}, ["blocking"])
+browser.commands.onCommand.addListener(onCommand);

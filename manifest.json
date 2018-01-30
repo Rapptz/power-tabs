@@ -35,7 +35,91 @@
             "suggested_key": {
                 "default": "Ctrl+Shift+L"
             },
-            "description": "Opens the Quick Group Switcher"
+            "description": "Opens the Quick Group Switcher."
+        },
+        "switch-1": {
+            "suggested_key": {
+                "default": "Alt+Shift+1"
+            },
+            "description": "Switch to first group."
+        },
+        "switch-2": {
+            "suggested_key": {
+                "default": "Alt+Shift+2"
+            },
+            "description": "Switch to second group."
+        },
+        "switch-3": {
+            "suggested_key": {
+                "default": "Alt+Shift+3"
+            },
+            "description": "Switch to third group."
+        },
+        "switch-4": {
+            "suggested_key": {
+                "default": "Alt+Shift+4"
+            },
+            "description": "Switch to fourth group."
+        },
+        "switch-5": {
+            "suggested_key": {
+                "default": "Alt+Shift+5"
+            },
+            "description": "Switch to fifth group."
+        },
+        "switch-6": {
+            "suggested_key": {
+                "default": "Alt+Shift+6"
+            },
+            "description": "Switch to sixth group."
+        },
+        "switch-7": {
+            "suggested_key": {
+                "default": "Alt+Shift+7"
+            },
+            "description": "Switch to seventh group."
+        },
+        "switch-8": {
+            "suggested_key": {
+                "default": "Alt+Shift+8"
+            },
+            "description": "Switch to eighth group."
+        },
+        "switch-9": {
+            "suggested_key": {
+                "default": "Alt+Shift+9"
+            },
+            "description": "Switch to ninth group."
+        },
+        "switch-10": {
+            "suggested_key": {
+                "default": "Alt+Shift+0"
+            },
+            "description": "Switch to tenth group."
+        },
+        "switch-prev": {
+            "suggested_key": {
+                "default": "Alt+Shift+PageUp"
+            },
+            "description": "Switch to previous group."
+        },
+        "switch-next": {
+            "suggested_key": {
+                "default": "Alt+Shift+PageDown"
+            },
+            "description": "Switch to next group."
+        },
+        "new-group": {
+            "suggested_key": {
+                "default": "Alt+Shift+Insert"
+            },
+            "description": "Create and switch to new group."
+        },
+        "switch-active": {
+            "suggested_key": {
+                "default": "Alt+Shift+Home"
+            },
+            "description": "Switch to last active group."
         }
     },
 
