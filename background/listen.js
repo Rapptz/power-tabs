@@ -37,6 +37,7 @@ var _groups = [];
 var _discardOnGroupChange = false;
 var _showActiveGroupBadge = true;
 var _hideOnGroupChange = true;
+var _enablePopup = true;
 var _freshInstallBaton = null;
 
 // windowId -> groupId for last active group
@@ -486,13 +487,16 @@ function onClicked(tab) {
   if(_openSidebarOnClick) {
     browser.sidebarAction.open();
   }
-  browser.browserAction.setPopup({
-    popup: "/popup/main.html"
-  });
-  browser.browserAction.openPopup();
-  browser.browserAction.setPopup({
-    popup: ""
-  });
+
+  if(_enablePopup) {
+    browser.browserAction.setPopup({
+      popup: "/popup/main.html"
+    });
+    browser.browserAction.openPopup();
+    browser.browserAction.setPopup({
+      popup: ""
+    });
+  }
 }
 
 async function ensureDefaultSettings() {
@@ -506,7 +510,8 @@ async function ensureDefaultSettings() {
     openSidebarOnClick: false,
     discardOnGroupChange: false,
     hideOnGroupChange: true,
-    showActiveGroupBadge: true
+    showActiveGroupBadge: true,
+    enablePopup: true
   };
 
   let keys = Object.keys(settings);
@@ -531,6 +536,7 @@ async function ensureDefaultSettings() {
   _discardOnGroupChange = before.discardOnGroupChange;
   _hideOnGroupChange = before.hideOnGroupChange;
   _showActiveGroupBadge = before.showActiveGroupBadge;
+  _enablePopup = before.enablePopup;
   await browser.storage.local.set(before);
 
   createContextMenus();
@@ -685,6 +691,10 @@ function onSettingChange(changes, area) {
   if(changes.hasOwnProperty("showActiveGroupBadge")) {
     _showActiveGroupBadge = changes.showActiveGroupBadge.newValue;
     toggleActiveGroupIcon(_showActiveGroupBadge);
+  }
+
+  if(changes.hasOwnProperty("enablePopup")) {
+    _enablePopup = changes.enablePopup.newValue;
   }
 
   if(changes.hasOwnProperty("groups")) {

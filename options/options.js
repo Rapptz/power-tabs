@@ -165,6 +165,12 @@ function loadRegularSettings(data) {
   showActiveGroupBadge.addEventListener("click", (e) => {
     saveSettings("showActiveGroupBadge", showActiveGroupBadge.checked);
   });
+
+  let enablePopup = document.getElementById("enablePopup");
+  enablePopup.checked = data.enablePopup;
+  enablePopup.addEventListener("click", (e) => {
+    saveSettings("enablePopup", enablePopup.checked);
+  });
 }
 
 async function loadSettings() {
