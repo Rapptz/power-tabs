@@ -121,7 +121,7 @@ class GroupList {
     }
 
     this.addGroup(group);
-    group.toggleReverseDisplay(old.reverseTabDisplay);
+    group.toggleReverseDisplay(this._reverseTabDisplay);
     group.sortByPosition();
   }
 
@@ -760,7 +760,7 @@ function onMessage(message) {
   port.onMessage.addListener(onMessage);
 
   await groupList.populate();
-  
+
   window.addEventListener("unload", (e) => {
     port.disconnect();
   });
