@@ -104,36 +104,42 @@ class GroupList {
     return windowInfo.id;
   }
 
+  populateFrom(groupInfo, tabs) {
+    let group = new Group(groupInfo);
+    for(let tab of tabs) {
+      if(tab.windowId !== this.windowId) {
+        continue;
+      }
+
+      let entry = new TabEntry(tab);
+      if(tab.active) {
+        this._activeTab = entry;
+      }
+
+      this._tabCache.set(tab.id, entry);
+      group.addTab(entry);
+    }
+
+    this.addGroup(group);
+    group.toggleReverseDisplay(old.reverseTabDisplay);
+    group.sortByPosition();
+  }
+
   async populate() {
     let tabs = await browser.tabs.query({ windowId: this.windowId });
 
     let old = await browser.storage.local.get(["groups", "reverseTabDisplay"]);
     this._reverseTabDisplay = old.reverseTabDisplay;
     if(!old.hasOwnProperty("groups")) {
-      // no pre-existing group so just make a dummy one
-      // and fill it with the current tab data
-      let group = new Group("untitled");
-      for(let tab of tabs) {
-        let entry = new TabEntry(tab);
-        if(tab.active) {
-          this._activeTab = entry;
-        }
-
-        this._tabCache.set(tab.id, entry);
-        group.addTab(entry);
-      }
-
-      this.addGroup(group);
-      group.toggleReverseDisplay(old.reverseTabDisplay);
-      group.sortByPosition();
+      this.port.postMessage({
+        method: "freshInstall",
+        windowId: this.windowId,
+        tabs: tabs
+      });
     }
     else {
       // load our groups from localStorage
       await this.loadFromLocalStorage(old.groups, tabs);
-    }
-
-    if(this._activeTab) {
-      this._activeTab.toggleActive(true); // scroll
     }
   }
 
@@ -740,6 +746,9 @@ function onMessage(message) {
   else if(message.method == "setGroupBaton" && message.windowId === groupList.windowId) {
     groupList.setGroupBaton(message.groupId);
   }
+  else if(message.method == "finishedFreshInstall") {
+    groupList.populateFrom(message.group, message.tabs);
+  }
 }
 
 (async () => {
@@ -751,8 +760,7 @@ function onMessage(message) {
   port.onMessage.addListener(onMessage);
 
   await groupList.populate();
-
-
+  
   window.addEventListener("unload", (e) => {
     port.disconnect();
   });

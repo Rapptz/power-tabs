@@ -364,7 +364,10 @@ async function moveTabToGroup(message, redirect=true) {
 
 function onPortMessage(message) {
   console.log(message.method);
-  if(message.method == "invalidateExempt") {
+  if(message.method == "freshInstall") {
+    freshInstall();
+  }
+  else if(message.method == "invalidateExempt") {
     _exemptTabs.delete(message.tabId);
   }
   else if(message.method == "activeSync") {
@@ -496,6 +499,41 @@ async function ensureDefaultSettings() {
   await browser.storage.local.set(before);
 
   createContextMenus();
+}
+
+async function freshInstall() {
+  let newGroup = {
+    uuid: uuid4(),
+    name: "untitled",
+    colour: '#000000',
+    active: true,
+    open: true
+  };
+
+  let tabs = await browser.tabs.query({});
+  let activeTabs = [];
+
+  for(let tab of tabs) {
+    if(tab.active) {
+      await browser.sessions.setWindowValue(tab.windowId, "active-group-id", newGroup.uuid);
+      activeTabs.push(tab);
+    }
+    let hidden = tab.hasOwnProperty("hidden") ? tab.hidden : false;
+    _tabInfo.set(tab.id, new TabInfo(tab.lastAccessed, newGroup.uuid, tab.windowId, tab.discarded, hidden));
+    await browser.sessions.setTabValue(tab.id, "group-id", newGroup.uuid);
+  }
+
+  postMessage({
+    method: "finishedFreshInstall",
+    group: newGroup,
+    tabs: tabs
+  });
+
+  _groups = [newGroup];
+
+  await browser.storage.local.set({
+    groups: _groups
+  });
 }
 
 async function prepare() {
