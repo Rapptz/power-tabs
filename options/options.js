@@ -79,6 +79,17 @@ class GroupSetting {
       }
     });
 
+    let deleteGroup = templ.getElementById("deleteGroup");
+    deleteGroup.id = "";
+    deleteGroup.addEventListener("click", (e) => {
+      if(confirm("Are you sure you want to delete this group?")) {
+        this.allGroups.splice(this.index, 1);
+        this.save();
+        clearGroupSettings();
+        loadGroupSettings({ groups: this.allGroups });
+      }
+    });
+
     this.view = templ;
   }
 
@@ -118,6 +129,13 @@ function loadGroupSettings(data) {
     if(setting) {
       setting.addAssignment(key.slice(5));
     }
+  }
+}
+
+function clearGroupSettings() {
+  let groupSettings = document.getElementById("group-settings");
+  while(groupSettings.lastChild && groupSettings.lastChild.id !== "createGroup") {
+    groupSettings.removeChild(groupSettings.lastChild);
   }
 }
 
@@ -179,4 +197,16 @@ async function loadSettings() {
   loadGroupSettings(data);
 }
 
+async function onGroupCreate(e) {
+  let groupSettings = document.getElementById("group-settings");
+  let newGroup = await browser.runtime.sendMessage({
+    method: "createGroup",
+    windowId: null
+  });
+  let data = await browser.storage.local.get("groups");
+  clearGroupSettings();
+  loadGroupSettings(data);
+}
+
+document.getElementById("createGroup").addEventListener("click", onGroupCreate);
 document.addEventListener("DOMContentLoaded", loadSettings);

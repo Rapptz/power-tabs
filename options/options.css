@@ -63,3 +63,37 @@ p {
 input.invalid {
   border: 1px solid #ff0039;
 }
+
+#createGroup {
+  float: right;
+}
+
+.control-button {
+  -moz-appearance: none;
+  background-color: #f9f9fa;
+  min-height: 30px;
+  border:  1px solid #d7d7db;
+  border-radius: 2px;
+  margin: 4px 8px;
+  font-size: 1em;
+}
+
+.control-button:hover {
+  background-color: #ebebeb;
+}
+
+.group-heading-container {
+  display: flex;
+  align-items: center;
+}
+
+.group-heading-container > .group-header {
+  flex: 1;
+}
+
+.group {
+  border: 1px solid hsla(0, 0%, 0%, 0.2);
+  border-radius: 2px;
+  padding: 4px 16px;
+  margin-bottom: 8px;
+}

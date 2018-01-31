@@ -56,30 +56,38 @@
       <input class="setting" type="checkbox" id="discardOnGroupChange">
     </div>
   </form>
+  <div class="create-group-container">
+    <input class="control-button" type="button" value="Create Group" id="createGroup">
+  </div>
   <div id="group-settings">
   </div>
   <script src="options.js"></script>
 
   <template id="group-template">
-    <h1 class="group-header" id="groupHeader"></h2>
-    <div class="options">
-      <div class="settings-group">
-        <span class="label">Name</span>
-        <input class="setting" id="groupName" type="text">
+    <div class="group">
+      <div class="group-heading-container">
+        <h1 class="group-header" id="groupHeader"></h1>
+        <input class="control-button" type="button" value="Delete Group" id="deleteGroup">
       </div>
-      <div class="settings-group">
-        <span class="label">Color</span>
-        <input class="setting" id="groupColour" type="color">
-      </div>
-      <div class="settings-group">
-        <div class="label">
-          Assigned Domains
-          <div class="aside">
-            You can delete assigned domains by selecting domains and pressing
-            Delete
-          </div>
+      <div class="options">
+        <div class="settings-group">
+          <span class="label">Name</span>
+          <input class="setting" id="groupName" type="text">
         </div>
-        <select id="assignedDomains" class="assigned-domains setting" size=5 multiple></select>
+        <div class="settings-group">
+          <span class="label">Color</span>
+          <input class="setting" id="groupColour" type="color">
+        </div>
+        <div class="settings-group">
+          <div class="label">
+            Assigned Domains
+            <div class="aside">
+              You can delete assigned domains by selecting domains and pressing
+              Delete
+            </div>
+          </div>
+          <select id="assignedDomains" class="assigned-domains setting" size=5 multiple></select>
+        </div>
       </div>
     </div>
   </template>
