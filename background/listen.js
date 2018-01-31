@@ -1,9 +1,10 @@
 class TabInfo {
-  constructor(lastAccessed, groupId, windowId, discarded, hidden) {
+  constructor(lastAccessed, groupId, windowId, discarded, hidden, pinned) {
     this.lastAccessed = lastAccessed;
     this.groupId = groupId;
     this.windowId = windowId;
     this.discarded = discarded || false;
+    this.pinned = pinned || false;
     this.hidden = hidden || false;
 
     // set([hostname]) temporarily exempt
@@ -106,7 +107,7 @@ async function onGroupSwitch(tabId, windowId, beforeGroupId, afterGroupId) {
   if(_discardOnGroupChange && browser.tabs.hasOwnProperty("discard")) {
     let tabIds = [];
     for(let [key, value] of _tabInfo.entries()) {
-      if(!value.discarded && value.windowId === windowId && value.groupId !== afterGroupId) {
+      if(!value.discarded && value.windowId === windowId && value.groupId !== afterGroupId && !value.pinned) {
         tabIds.push(key);
       }
     }
@@ -117,7 +118,7 @@ async function onGroupSwitch(tabId, windowId, beforeGroupId, afterGroupId) {
     let toHide = [];
     let toShow = [];
     for(let [key, value] of _tabInfo.entries()) {
-      if(value.windowId !== windowId) {
+      if(value.windowId !== windowId || value.pinned) {
         continue;
       }
 
@@ -520,7 +521,7 @@ async function actualFreshInstall() {
       activeTabs.push(tab);
     }
     let hidden = tab.hasOwnProperty("hidden") ? tab.hidden : false;
-    _tabInfo.set(tab.id, new TabInfo(tab.lastAccessed, newGroup.uuid, tab.windowId, tab.discarded, hidden));
+    _tabInfo.set(tab.id, new TabInfo(tab.lastAccessed, newGroup.uuid, tab.windowId, tab.discarded, hidden, tab.pinned));
     await browser.sessions.setTabValue(tab.id, "group-id", newGroup.uuid);
   }
 
@@ -554,7 +555,7 @@ async function prepare() {
         await setActiveGroupIcon(tab.id, groupId);
       }
       let hidden = tab.hasOwnProperty("hidden") ? tab.hidden : false;
-      _tabInfo.set(tab.id, new TabInfo(tab.lastAccessed, groupId, tab.windowId, tab.discarded, hidden));
+      _tabInfo.set(tab.id, new TabInfo(tab.lastAccessed, groupId, tab.windowId, tab.discarded, hidden, tab.pinned));
     }
   }
 }
@@ -578,7 +579,9 @@ function _upsertTab(tabId, groupId, windowId) {
     tabInfo.windowId = windowId;
   }
   else {
-    _tabInfo.set(tabId, new TabInfo(new Date().getTime(), groupId, windowId));
+    browser.tabs.get(tabId).then((tabInfo) => {
+      _tabInfo.set(tabId, new TabInfo(new Date().getTime(), groupId, windowId, tabInfo.discarded, false, tabInfo.pinned));
+    });
   }
 }
 
@@ -605,27 +608,26 @@ async function onTabAttach(tabId, attachInfo) {
 }
 
 function onTabUpdate(tabId, changeInfo, tabInfo) {
+  let groupInfo = _tabInfo.get(tabId);
+  if(!groupInfo) {
+    return;
+  }
+
   // https://bugzilla.mozilla.org/show_bug.cgi?id=1430620
   if(tabInfo.active) {
-    let groupInfo = _tabInfo.get(tabId);
-    if(groupInfo) {
-      let groupId = groupInfo.groupId;
-      setActiveGroupIcon(tabId, groupId);
-    }
+    setActiveGroupIcon(tabId, groupInfo.groupId);
   }
 
   if(changeInfo.hasOwnProperty("discarded")) {
-    let groupInfo = _tabInfo.get(tabId);
-    if(groupInfo) {
-      groupInfo.discarded = changeInfo.discarded;
-    }
+    groupInfo.discarded = changeInfo.discarded;
+  }
+
+  if(changeInfo.hasOwnProperty("pinned")) {
+    groupInfo.pinned = changeInfo.pinned;
   }
 
   if(changeInfo.hasOwnProperty("hidden")) {
-    let groupInfo = _tabInfo.get(tabId);
-    if(groupInfo) {
-      groupInfo.hidden = changeInfo.hidden;
-    }
+    groupInfo.hidden = changeInfo.hidden;
   }
 }
 
