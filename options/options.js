@@ -159,6 +159,12 @@ function loadRegularSettings(data) {
   if(!browser.tabs.hasOwnProperty("hide")) {
     hideOnGroupChange.setAttribute("disabled", 1);
   }
+
+  let showActiveGroupBadge = document.getElementById("showActiveGroupBadge");
+  showActiveGroupBadge.checked = data.showActiveGroupBadge;
+  showActiveGroupBadge.addEventListener("click", (e) => {
+    saveSettings("showActiveGroupBadge", showActiveGroupBadge.checked);
+  });
 }
 
 async function loadSettings() {

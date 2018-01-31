@@ -35,6 +35,7 @@ var _ports = new Map();
 var _openSidebarOnClick = false;
 var _groups = [];
 var _discardOnGroupChange = false;
+var _showActiveGroupBadge = true;
 var _hideOnGroupChange = true;
 var _freshInstallBaton = null;
 
@@ -162,6 +163,10 @@ function encodeURL(url) {
 }
 
 async function setActiveGroupIcon(tabId, groupId) {
+  if(!_showActiveGroupBadge) {
+    return;
+  }
+
   let group = _groups.find((g) => g.uuid == groupId);
   if(!group) {
     return;
@@ -182,6 +187,32 @@ async function setActiveGroupIcon(tabId, groupId) {
     title: `Active Group: ${group.name}`,
     tabId: tabId
   });
+}
+
+async function toggleActiveGroupIcon(visibility) {
+  let entries = Array.from(_tabInfo.entries());
+  for(let group of _groups) {
+    let subentries = entries.filter(([tabId, info]) => info.groupId === group.uuid);
+    for(let [tabId, info] of subentries) {
+      if(visibility) {
+        // can only set to `null` to remove in FF59+
+        await browser.browserAction.setBadgeBackgroundColor({
+          tabId: tabId,
+          color: group.colour + '80'
+        });
+      }
+
+      await browser.browserAction.setBadgeText({
+        tabId: tabId,
+        text: visibility ? String.fromCodePoint(group.name.codePointAt(0)) : ""
+      });
+
+      await browser.browserAction.setTitle({
+        tabId: tabId,
+        title: visibility ? `Active Group: ${group.name}` : ""
+      });
+    }
+  }
 }
 
 async function onBeforeRequest(options) {
@@ -474,7 +505,8 @@ async function ensureDefaultSettings() {
     reverseTabDisplay: false,
     openSidebarOnClick: false,
     discardOnGroupChange: false,
-    hideOnGroupChange: true
+    hideOnGroupChange: true,
+    showActiveGroupBadge: true
   };
 
   let keys = Object.keys(settings);
@@ -498,6 +530,7 @@ async function ensureDefaultSettings() {
   _openSidebarOnClick = before.openSidebarOnClick;
   _discardOnGroupChange = before.discardOnGroupChange;
   _hideOnGroupChange = before.hideOnGroupChange;
+  _showActiveGroupBadge = before.showActiveGroupBadge;
   await browser.storage.local.set(before);
 
   createContextMenus();
@@ -647,6 +680,11 @@ function onSettingChange(changes, area) {
   if(changes.hasOwnProperty("hideOnGroupChange")) {
     _hideOnGroupChange = changes.hideOnGroupChange.newValue;
     changeAllTabVisbility(_hideOnGroupChange);
+  }
+
+  if(changes.hasOwnProperty("showActiveGroupBadge")) {
+    _showActiveGroupBadge = changes.showActiveGroupBadge.newValue;
+    toggleActiveGroupIcon(_showActiveGroupBadge);
   }
 
   if(changes.hasOwnProperty("groups")) {
