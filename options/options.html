@@ -12,14 +12,18 @@
       <input type="checkbox" id="reverseTabDisplay">
     </div>
     <div class="settings-group">
-      <span class="label">Open sidebar when pressing toolbar button</span>
+      <span class="label">Badge opens sidebar</span>
       <input class="setting" type="checkbox" id="openSidebarOnClick">
+    </div>
+    <div class="settings-group">
+      <span class="label">Show active group in badge</span>
+      <input class="setting" type="checkbox" id="showActiveGroupBadge">
     </div>
     <div class="settings-group">
       <div class="label">
         Hide tabs on group change
         <div class="aside">
-          <p>This feature requires Firefox v59.0b3 or higher.</p>
+          <p>This feature requires Firefox 59.0b3 or higher.</p>
           <p>
             You must also set
             <br>extensions.webextensions.tabhide.enabled
@@ -41,10 +45,6 @@
         </div>
       </div>
       <input class="setting" type="checkbox" id="discardOnGroupChange">
-    </div>
-    <div class="settings-group">
-      <span class="label">Show active group in badge</span>
-      <input class="setting" type="checkbox" id="showActiveGroupBadge">
     </div>
   </form>
   <div id="group-settings">
