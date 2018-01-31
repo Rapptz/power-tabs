@@ -35,6 +35,7 @@ var _openSidebarOnClick = false;
 var _groups = [];
 var _discardOnGroupChange = false;
 var _hideOnGroupChange = true;
+var _freshInstallBaton = null;
 
 // windowId -> groupId for last active group
 var _activeGroupCache = new Map();
@@ -501,7 +502,7 @@ async function ensureDefaultSettings() {
   createContextMenus();
 }
 
-async function freshInstall() {
+async function actualFreshInstall() {
   let newGroup = {
     uuid: uuid4(),
     name: "untitled",
@@ -534,6 +535,13 @@ async function freshInstall() {
   await browser.storage.local.set({
     groups: _groups
   });
+}
+
+function freshInstall() {
+  if(_freshInstallBaton === null) {
+    _freshInstallBaton = false;
+    actualFreshInstall();
+  }
 }
 
 async function prepare() {
