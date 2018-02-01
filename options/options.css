@@ -66,6 +66,7 @@ input.invalid {
 
 #createGroup {
   float: right;
+  margin: 8px 4px;
 }
 
 .control-button {
