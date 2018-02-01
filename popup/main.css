@@ -1,8 +1,51 @@
+.light-theme {
+  --background-color: #ffffff;
+  --primary-text-color: #0c0c0d;
+  --secondary-text-color: #737373;
+
+  /* search box colours */
+  --search-border-normal: rgba(12, 12, 13, 0.3);
+  --search-border-hover: #0a84ff;
+  --search-border-focus: #0a84ff;
+  --search-background: #ffffff;
+  --search-placeholder: rgba(12, 12, 13, 0.7);
+  --search-text: #0c0c0d;
+
+  --control-button-hover: rgba(12, 12, 13, .1);
+
+  --group-background: #ededf0;
+  --group-hover-background: #d7d7db;
+  --group-border: #b1b1b3;
+}
+
+.dark-theme {
+  --background-color: #323234;
+  --primary-text-color: #b1b1b3;
+  --secondary-text-color: #737373;
+
+  /* search box colours */
+  --search-border-normal: #262627;
+  --search-border-hover: #3399ff;
+  --search-border-focus: #3399ff;
+  --search-background: #474749;
+  --search-placeholder: #b1b1b3;
+  --search-text: #ffffff;
+
+  --control-button-hover: #5b5b5d;
+
+  --group-background: rgba(74, 74, 79, 0.6);
+  --group-hover-background: rgba(74,74,79, 0.9);
+  --group-border: #2a2a2e;
+}
+
 body {
   width: 310px;
   height: 90%;
   margin: 16px;
   overflow-x: hidden;
+  color: var(--primary-text-color);
+  background-color: var(--background-color);
+  font-family: Roboto, Noto, "San Francisco", Ubuntu, "Segoe UI", "Fira Sans", message-box, Arial, sans-serif;
 
   /* https://bugzilla.mozilla.org/show_bug.cgi?id=1418677 */
   background-image: url("/icons/transparency_workaround.png");
@@ -54,7 +97,7 @@ body {
 
 #always-open-label {
   font-size: 11px;
-  color: #737373;
+  color: var(--secondary-text-color);
 }
 
 .hidden {
@@ -65,9 +108,17 @@ body {
 #search-container {
   display: flex;
   align-items: center;
-  -moz-appearance: textfield;
+  background-color: var(--search-background);
+  color: var(--search-text);
+  border: 1px solid var(--search-border-normal);
   width: 90%;
   margin-right: 4px;
+  height: 24px;
+  padding: 4px;
+}
+
+#search-container:hover {
+  border: 1px solid var(--search-border-hover);
 }
 
 #search-icon {
@@ -78,18 +129,33 @@ body {
   height: 16px;
 }
 
+.dark-theme #search-icon {
+  filter: invert(75%);
+}
+
 #search {
   flex: 2;
   border: none;
   overflow: auto;
+  -moz-appearance: none;
+  background-color: var(--search-background);
+  color: var(--search-text);
+}
+
+#search::placeholder {
+  color: var(--search-placeholder);
 }
 
 #cancel-search-icon {
-  background-image: url("/icons/close.svg");
+  background-image: url("/icons/close.svg#light");
   background-repeat: no-repeat;
   background-size: 16px;
   width: 16px;
   height: 16px;
+}
+
+.dark-theme #cancel-search-icon {
+  background-image: url("/icons/close.svg#dark") !important;
 }
 
 .control {
@@ -98,23 +164,43 @@ body {
   min-width: 24px;
   background-color: transparent;
   border: 1px solid transparent;
+  border-radius: 2px;
 }
 
 .control:hover {
-  background-color: rgba(12, 12, 13, .1) !important;
+  background-color: var(--control-button-hover) !important;
 }
 
 #new-group-button {
-  background: url("/icons/new_group.svg") no-repeat center;
+  background: url("/icons/new_group.svg#light") no-repeat center;
   background-size: contain;
 }
 
+.dark-theme #new-group-button {
+  background-image: url("/icons/new_group.svg#dark") !important;
+}
+
 #settings-button {
-  background: url("/icons/settings.svg") no-repeat center;
+  background: url("/icons/settings.svg#light") no-repeat center;
+}
+
+.dark-theme #settings-button {
+  background-image: url("/icons/settings.svg#dark") !important;
+}
+
+.group {
+  border-radius: 2px;
+  background-color: var(--group-background);
+  box-shadow: inset 0 0 0 1px var(--group-border);
+  font-size: 15px;
+}
+
+.group.selected, .group:hover {
+  background-color: var(--group-hover-background);
 }
 
 .group-name {
-  padding: 4px;
+  padding: 4px 8px;
   margin-bottom: 4px;
 }
 
@@ -135,10 +221,14 @@ body {
   width: 16px;
   height: 16px;
   font-size: 13px;
-  margin: 0px 4px;
+  margin-right: 8px;
+  margin-left: 4px;
   display: flex;
   align-items: center;
   justify-content: center;
+  background-color: var(--group-background);
+  box-shadow: inset 0 0 0 1px var(--group-border);
+  border-radius: 2px;
 }
 
 .tab-name {

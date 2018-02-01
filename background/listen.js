@@ -511,7 +511,8 @@ async function ensureDefaultSettings() {
     discardOnGroupChange: false,
     hideOnGroupChange: true,
     showActiveGroupBadge: true,
-    enablePopup: true
+    enablePopup: true,
+    darkTheme: false
   };
 
   let keys = Object.keys(settings);

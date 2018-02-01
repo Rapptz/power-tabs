@@ -189,6 +189,12 @@ function loadRegularSettings(data) {
   enablePopup.addEventListener("click", (e) => {
     saveSettings("enablePopup", enablePopup.checked);
   });
+
+  let darkTheme = document.getElementById("darkTheme");
+  darkTheme.checked = data.darkTheme;
+  darkTheme.addEventListener("click", (e) => {
+    saveSettings("darkTheme", darkTheme.checked);
+  });
 }
 
 async function loadSettings() {

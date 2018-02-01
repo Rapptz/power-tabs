@@ -61,7 +61,7 @@ class Tab {
     groupBadge.textContent = String.fromCodePoint(parent.name.codePointAt(0));
     groupBadge.className = "group-badge";
     groupBadge.title = parent.name;
-    setDefaultGroupColour(groupBadge, parent.colour);
+    groupBadge.style.color = parent.colour;
 
     let icon = createIcon(data.hasOwnProperty('favIconUrl') ? data.favIconUrl : null);
     let name = document.createElement("div");
@@ -179,15 +179,6 @@ class Group {
     }
   }
 
-  toggleHover(value) {
-    if(value) {
-      setHoverGroupColour(this._groupName, this.colour);
-    }
-    else {
-      setDefaultGroupColour(this._groupName, this.colour);
-    }
-  }
-
   buildView() {
     this.view = document.createElement("div");
     this.view.className = "group";
@@ -197,16 +188,8 @@ class Group {
     let groupName = document.createElement("div");
     groupName.className = "group-name";
     groupName.textContent = this.name;
+    groupName.style.color = this.colour;
     this._groupName = groupName;
-
-    setDefaultGroupColour(groupName, this.colour);
-    groupName.addEventListener("mouseenter", (e) => {
-      setHoverGroupColour(groupName, this.colour);
-    });
-
-    groupName.addEventListener("mouseleave", (e) => {
-      setDefaultGroupColour(groupName, this.colour);
-    });
 
     let tabCount = document.createElement("span");
     tabCount.className = "group-tab-count";
@@ -261,6 +244,14 @@ async function switchToLastActiveTab() {
   }
 }
 
+searchBar.addEventListener("focus", () => {
+  searchBar.parentNode.style.border = `1px solid var(--search-border-focus)`;
+});
+
+searchBar.addEventListener("blur", () => {
+  searchBar.parentNode.style.border = "";
+});
+
 searchBar.addEventListener("keyup", (e) => {
   if(searchBar.value !== _lastSearch) {
     swapSelectedWith(searchBar);
@@ -310,6 +301,10 @@ async function prepare() {
   // peculiar
   return;
  }
+
+ let isDarkTheme = await browser.storage.local.get("darkTheme");
+ isDarkTheme = isDarkTheme.hasOwnProperty("darkTheme") && isDarkTheme.darkTheme;
+ document.body.classList.add(isDarkTheme ? "dark-theme" : "light-theme");
 
  for(let group of storage.groups) {
   let g = new Group(group);
@@ -440,14 +435,12 @@ function swapSelectedWith(node) {
   // remove the hover colour from the active group
   if(_selectedElement.hasAttribute("data-group-id")) {
     let group = cache.get(_selectedElement.getAttribute("data-group-id"));
-    group.toggleHover(false);
   }
 
 
   // add the hover colour to the new active group (if applicable)
   if(node.hasAttribute("data-group-id")) {
     let group = cache.get(node.getAttribute("data-group-id"));
-    group.toggleHover(true);
   }
 
   _selectedElement.classList.remove("selected");

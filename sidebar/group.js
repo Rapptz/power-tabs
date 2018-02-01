@@ -72,15 +72,7 @@ class Group {
     let summary = document.createElement("summary");
     summary.className = "tab-group-container";
     this._summaryView = summary;
-
-    setDefaultGroupColour(summary, this.colour);
-    summary.addEventListener("mouseenter", (e) => {
-      setHoverGroupColour(this._summaryView, this.colour);
-    });
-
-    summary.addEventListener("mouseleave", (e) => {
-      setDefaultGroupColour(this._summaryView, this.colour);
-    });
+    summary.style.color = this.colour;
 
     let summaryIcon = document.createElement("div");
     summaryIcon.className = "summary-icon";

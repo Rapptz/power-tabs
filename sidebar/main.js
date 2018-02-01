@@ -22,6 +22,14 @@ class GroupList {
       browser.runtime.openOptionsPage();
     });
 
+    this._searchBar.addEventListener("focus", () => {
+      this._searchBar.parentNode.style.border = `1px solid var(--search-border-focus)`;
+    });
+
+    this._searchBar.addEventListener("blur", () => {
+      this._searchBar.parentNode.style.border = "";
+    });
+
     this._searchBar.addEventListener("keyup", (e) => {
       if(e.key === "Escape" || e.key === "Esc") {
         this._searchBar.value = "";
@@ -128,8 +136,11 @@ class GroupList {
   async populate() {
     let tabs = await browser.tabs.query({ windowId: this.windowId });
 
-    let old = await browser.storage.local.get(["groups", "reverseTabDisplay"]);
+    let old = await browser.storage.local.get(["groups", "reverseTabDisplay", "darkTheme"]);
     this._reverseTabDisplay = old.reverseTabDisplay;
+    let isDarkTheme = old.hasOwnProperty("darkTheme") && old.darkTheme === true;
+    document.body.classList.add(isDarkTheme ? "dark-theme" : "light-theme");
+
     if(!old.hasOwnProperty("groups")) {
       this.port.postMessage({
         method: "freshInstall",
@@ -717,6 +728,18 @@ class GroupList {
       this._reverseTabDisplay = changes.reverseTabDisplay.newValue;
       for(let group of this.groups) {
         group.toggleReverseDisplay(this._reverseTabDisplay);
+      }
+    }
+
+    if(changes.hasOwnProperty("darkTheme")) {
+      let newValue = changes.darkTheme.newValue;
+      if(newValue) {
+        document.body.classList.remove("light-theme");
+        document.body.classList.add("dark-theme");
+      }
+      else {
+        document.body.classList.remove("dark-theme"); 
+        document.body.classList.add("light-theme");
       }
     }
 

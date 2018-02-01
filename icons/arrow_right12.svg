@@ -2,5 +2,22 @@
    - License, v. 2.0. If a copy of the MPL was not distributed with this
    - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
 <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 12 12">
-  <path fill="rgba(12, 12, 13, .8)" d="M9 6a1 1 0 0 0-.293-.707l-3-3a1 1 0 0 0-1.414 1.414L6.586 6 4.293 8.293a1 1 0 0 0 1.414 1.414l3-3A1 1 0 0 0 9 6z"></path>
+  <style>
+    .icon:not(:target) {
+      display: none;
+    }
+
+    #light {
+      fill: rgba(12, 12, 13, .8);
+    }
+
+    #dark {
+      fill: rgba(249, 249, 250, 0.8);
+    }
+  </style>
+  <defs>
+    <path id="icon" d="M9 6a1 1 0 0 0-.293-.707l-3-3a1 1 0 0 0-1.414 1.414L6.586 6 4.293 8.293a1 1 0 0 0 1.414 1.414l3-3A1 1 0 0 0 9 6z"></path>
+  </defs>
+  <use id="light" class="icon" href="#icon" />
+  <use id="dark" class="icon" href="#icon" />
 </svg>

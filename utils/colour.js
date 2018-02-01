@@ -49,18 +49,6 @@ function randomColour() {
   return '#' + number.toString(16).padStart(6, 0);
 }
 
-function setDefaultGroupColour(elem, hexCode) {
-  let [h, s, l] = hexToHsl(hexCode);
-  elem.style.boxShadow = `inset 0 0 0 1px ${hexCode}`;
-  elem.style.backgroundColor = hslToHex(h, s, 0.93);
-  elem.style.color = hslToHex(h, s, 0.43);
-}
-
-function setHoverGroupColour(elem, hexCode) {
-  let [h, s, l] = hexToHsl(hexCode);
-  elem.style.backgroundColor = hslToHex(h, s, 0.83);
-}
-
 // credit: https://gist.github.com/mjackson/5311256
 
 /**
