@@ -30,10 +30,11 @@ function fuzzyMatchTabObjects(query, tabs) {
 
   for (let tab of tabs) {
     let score = tabScore(tab, regex);
-    if(tabScore != Number.MAX_VALUE) {
+    if(score !== Number.MAX_VALUE) {
       results.push({ tab: tab, score: score });
     }
   }
+
   return results.sort((a, b) => a.score - b.score).map(r => r.tab);
 }
 
