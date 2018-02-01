@@ -131,6 +131,11 @@ class GroupList {
     this.addGroup(group);
     group.toggleReverseDisplay(this._reverseTabDisplay);
     group.sortByPosition();
+
+    if(this._activeTab) {
+      this.setActive(this._activeTab);
+      this._activeTab.scrollTo();
+    }
   }
 
   async populate() {
@@ -206,6 +211,11 @@ class GroupList {
 
     if(deadEntries.length > 0 && oldActiveGroup) {
       this.notifyGroupChange(deadEntries, oldActiveGroup.uuid);
+    }
+
+    if(this._activeTab) {
+      this.setActive(this._activeTab);
+      this._activeTab.scrollTo();
     }
   }
 
