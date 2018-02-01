@@ -195,6 +195,12 @@ function loadRegularSettings(data) {
   darkTheme.addEventListener("click", (e) => {
     saveSettings("darkTheme", darkTheme.checked);
   });
+
+  let defaultColour = document.getElementById("defaultColour");
+  defaultColour.value = data.defaultColour;
+  defaultColour.addEventListener("change", (e) => {
+    saveSettings("defaultColour", defaultColour.value);
+  });
 }
 
 async function loadSettings() {

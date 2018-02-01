@@ -15,7 +15,10 @@ class GroupList {
     this._groupBaton = null;
 
     document.getElementById("new-group-button").addEventListener("click", () => {
-      this.addGroup(new Group("untitled"));
+      browser.runtime.sendMessage({
+        method: "createGroup",
+        windowId: this.windowId
+      });
     });
 
     document.getElementById("settings-button").addEventListener("click", () => {
