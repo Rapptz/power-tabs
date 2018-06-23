@@ -8,6 +8,7 @@ class Group {
       this.open = args.open;
       this.active = args.active;
       this.colour = args.hasOwnProperty('colour') ? args.colour : '#000000';
+      this.background = args.hasOwnProperty('background') ? args.background : '#ededf0';
     }
     else {
       this.name = args;
@@ -15,6 +16,7 @@ class Group {
       this.open = true;
       this.active = false;
       this.colour = '#000000';
+      this.background = '#ededf0';
     }
 
     this.parent = null;
@@ -73,6 +75,7 @@ class Group {
     summary.className = "tab-group-container";
     this._summaryView = summary;
     summary.style.color = this.colour;
+    summary.style.backgroundColor = this.background;
 
     let summaryIcon = document.createElement("div");
     summaryIcon.className = "summary-icon";
@@ -680,7 +683,8 @@ class Group {
       uuid: this.uuid,
       open: this.open,
       active: this.active,
-      colour: this.colour
+      colour: this.colour,
+      background: this.background
     };
   }
 

@@ -62,6 +62,7 @@ class Tab {
     groupBadge.className = "group-badge";
     groupBadge.title = parent.name;
     groupBadge.style.color = parent.colour;
+    groupBadge.style.backgroundColor = parent.background;
 
     let icon = createIcon(data.hasOwnProperty('favIconUrl') ? data.favIconUrl : null);
     let name = document.createElement("div");
@@ -125,6 +126,7 @@ class Group {
     this.open = data.open;
     this.active = data.active;
     this.colour = data.colour || '#000000';
+    this.background = data.background || '#ededf0';
     this.tabs = [];
   }
 
@@ -138,7 +140,8 @@ class Group {
       uuid: this.uuid,
       open: this.open,
       active: this.active,
-      colour: this.colour
+      colour: this.colour,
+      background: this.background
     };
   }
 
@@ -189,6 +192,7 @@ class Group {
     groupName.className = "group-name";
     groupName.textContent = this.name;
     groupName.style.color = this.colour;
+    groupName.style.backgroundColor = this.background;
     this._groupName = groupName;
 
     let tabCount = document.createElement("span");

@@ -39,6 +39,7 @@ var _showActiveGroupBadge = true;
 var _hideOnGroupChange = true;
 var _enablePopup = true;
 var _defaultColour = '#000000';
+var _defaultBgColour = '#ededf0';
 var _freshInstallBaton = null;
 
 // windowId -> groupId for last active group
@@ -314,7 +315,8 @@ async function createGroup(windowId, sendResponse=null) {
     uuid: uuid4(),
     open: true,
     active: true,
-    colour: _defaultColour
+    colour: _defaultColour,
+    background: _defaultBgColour
   };
 
   _groups.push(newGroup);
@@ -514,7 +516,8 @@ async function ensureDefaultSettings() {
     showActiveGroupBadge: true,
     enablePopup: true,
     darkTheme: false,
-    defaultColour: '#000000'
+    defaultColour: '#000000',
+    defaultBgColour: '#ededf0'
   };
 
   let keys = Object.keys(settings);
@@ -550,6 +553,7 @@ async function actualFreshInstall() {
     uuid: uuid4(),
     name: "untitled",
     colour: _defaultColour,
+    background: _defaultBgColour,
     active: true,
     open: true
   };
@@ -702,6 +706,10 @@ function onSettingChange(changes, area) {
 
   if(changes.hasOwnProperty("defaultColour")) {
     _defaultColour = changes.defaultColour.newValue;
+  }
+
+  if(changes.hasOwnProperty("defaultBgColour")) {
+    _defaultBgColour = changes.defaultBgColour.newValue;
   }
 
   if(changes.hasOwnProperty("groups")) {

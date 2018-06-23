@@ -65,6 +65,15 @@ class GroupSetting {
       this.save();
     });
 
+    let backgroundEdit = templ.getElementById("groupBgColour");
+    backgroundEdit.id = "";
+    backgroundEdit.value = this.data.hasOwnProperty("background") ? this.data.background : '#ededf0';
+
+    backgroundEdit.addEventListener("change", (e) => {
+      this.data.background = backgroundEdit.value;
+      this.save();
+    });
+
     let assignedDomains = templ.getElementById("assignedDomains");
     assignedDomains.id = "";
     this._assignedDomains = assignedDomains;
@@ -200,6 +209,12 @@ function loadRegularSettings(data) {
   defaultColour.value = data.defaultColour;
   defaultColour.addEventListener("change", (e) => {
     saveSettings("defaultColour", defaultColour.value);
+  });
+
+  let defaultBgColour = document.getElementById("defaultBgColour");
+  defaultBgColour.value = data.defaultBgColour;
+  defaultBgColour.addEventListener("change", (e) => {
+    saveSettings("defaultBgColour", defaultBgColour.value);
   });
 }
 
