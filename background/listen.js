@@ -500,7 +500,7 @@ function onClicked(tab) {
   }
 }
 
-async function ensureDefaultSettings() {
+function ensureDefaultSettings() {
   let groups = await browser.storage.local.get("groups");
   if(groups.hasOwnProperty("groups")) {
     _groups = groups.groups;
@@ -587,7 +587,7 @@ function freshInstall() {
   }
 }
 
-async function prepare() {
+function prepare() {
   let tabs = await browser.tabs.query({});
   for(let tab of tabs) {
     let groupId = await browser.sessions.getTabValue(tab.id, "group-id");
