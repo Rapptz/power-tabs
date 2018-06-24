@@ -41,6 +41,20 @@ class TabEntry {
       this.changeTab()
     });
 
+    // inhibit autoscroll
+    tab.addEventListener("mousedown", (e) => {
+      if(e.button == 1) {
+        e.preventDefault();
+      }
+    });
+
+    // close tab on middle-click
+    tab.addEventListener("auxclick", (e) => {
+      if(e.button == 1) {
+        this.close();
+      }
+    });
+
     tab.title = this.title;
 
     this.view = tab;
