@@ -56,7 +56,7 @@ function confirm() {
   if(neverAsk) {
     browser.runtime.sendMessage({
       method: "neverAsk",
-      neverAsk: true,
+      neverAsk: 1,
       hostname: new URL(redirectUrl).hostname
     });
   }
@@ -73,6 +73,15 @@ function confirm() {
 }
 
 function deny() {
+  const neverAsk = document.getElementById("never-ask").checked;
+  if(neverAsk) {
+    browser.runtime.sendMessage({
+      method: "neverAsk",
+      neverAsk: 2,
+      hostname: new URL(redirectUrl).hostname
+    });
+  }
+
   browser.runtime.sendMessage({
     method: "redirectTab",
     tabId: tabId,

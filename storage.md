@@ -35,4 +35,4 @@ Represents an automatic assignment. Basically a URL that is assigned to automati
 |   Keys   |   Type  |                                Value                                 |
 | :------: | :-----: | :------------------------------------------------------------------: |
 |  group   |  String |         The group's unique ID that refers to this assignment         |
-| neverAsk | Boolean | Whether to ask to redirect if the group differs from the assignment. |
+| neverAsk |   Int   | Whether to ask to move the tab to assigned group if the current one is different. 1 — do not ask and move, 2 — do not ask and do not move |

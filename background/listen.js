@@ -242,22 +242,35 @@ async function onBeforeRequest(options) {
     return {};
   }
 
-  settings = settings[key];
-  if(settings.neverAsk) {
-    return {};
-  }
-
   let groupId = await browser.sessions.getTabValue(options.tabId, "group-id");
   if(!groupId) {
     return {};
   }
 
+  settings = settings[key];
+
+  if(!settings.group) {
+    return {};
+  }
+
   if(groupId !== settings.group) {
-    const extURL = browser.extension.getURL("/background/confirm.html");
-    let url = `${extURL}?url=${encodeURL(options.url)}&groupId=${settings.group}&tabId=${tab.id}&windowId=${tab.windowId}`
-    return {
-      redirectUrl: url
-    };
+    if(settings.neverAsk == 1) {
+      moveTabToGroup({
+        tabId: tab.id,
+        windowId: tab.windowId,
+        groupId: settings.group
+      }, false);
+    }
+    else if(settings.neverAsk == 2) {
+      // do nothing
+    }
+    else {
+      const extURL = browser.extension.getURL("/background/confirm.html");
+      let url = `${extURL}?url=${encodeURL(options.url)}&groupId=${settings.group}&tabId=${tab.id}&windowId=${tab.windowId}`
+      return {
+        redirectUrl: url
+      };
+    }
   }
 
   return {};
