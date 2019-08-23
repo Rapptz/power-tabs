@@ -1,12 +1,12 @@
 {
     "manifest_version": 2,
-    "name": "Power Tabs",
-    "version": "1.8.0",
-    "homepage_url": "https://github.com/Rapptz/power-tabs",
+    "name": "Vertical Tab Groups",
+    "version": "0.1.0",
+    "homepage_url": "https://github.com/Celti/vertical-tab-groups",
     "description": "Vertical tab groups with tab searching",
-    "applications": {
+    "browser_specific_settings": {
         "gecko": {
-            "id": "power-tabs@rapptz-addons.com",
+            "id": "vertical-tab-groups@celti.name",
             "strict_min_version": "57.0"
         }
     },
@@ -29,7 +29,7 @@
             "suggested_key": {
                 "default": "Ctrl+Shift+Comma"
             },
-            "description": "Opens the Power Tab menu."
+            "description": "Opens the Vertical Tab Groups menu."
         },
         "_execute_browser_action": {
             "suggested_key": {
@@ -137,7 +137,7 @@
     },
 
     "sidebar_action": {
-        "default_title": "Power Tabs",
+        "default_title": "Vertical Tab Groups",
         "default_panel": "sidebar/main.html",
         "default_icon": "icons/icon.svg",
         "browser_style": true
@@ -146,7 +146,7 @@
     "browser_action": {
         "browser_style": true,
         "default_icon": "icons/icon.svg",
-        "default_title": "Power Tabs"
+        "default_title": "Vertical Tab Groups"
     },
 
     "web_accessible_resources": [
